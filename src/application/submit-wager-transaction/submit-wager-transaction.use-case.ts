@@ -2,6 +2,7 @@ import { FailureCode } from "../../domain/errors/failure-code";
 import { InvariantViolationError } from "../../domain/errors/invariant-violation.error";
 import type { Money } from "../../domain/money/money";
 import { computePayloadHash } from "../../domain/transaction/payload-hash";
+import { checkReversal } from "../../domain/transaction/reversal-policy";
 import type { TransactionKind } from "../../domain/transaction/transaction-kind";
 import { TransactionStatus } from "../../domain/transaction/transaction-status";
 import { WagerTransaction } from "../../domain/transaction/wager-transaction";
@@ -98,6 +99,7 @@ export class SubmitWagerTransactionUseCase {
       return this.reject(repositories, transaction, FailureCode.CURRENCY_MISMATCH, wallet.balance);
     }
     if (!transaction.affectsBalance()) return this.recordWithoutMovement(submission);
+    if (transaction.requiresReference()) return this.processReversal(submission);
     return this.applyMovement(submission, {
       direction: transaction.ledgerDirectionFor(),
       referenceTransactionId: null,
@@ -125,6 +127,41 @@ export class SubmitWagerTransactionUseCase {
     return processed(transaction, wallet.balance);
   }
 
+  private async processReversal(submission: Submission): Promise<SubmitResult> {
+    const { repositories, transaction, wallet } = submission;
+    const reference = await repositories.transactions.findByProviderAndExternalId(
+      transaction.providerId,
+      requireReferenceExternalId(transaction),
+    );
+    if (reference === null || isUnresolved(reference)) return this.pendReference(submission);
+    const verdict = checkReversal(transaction, reference);
+    if (!verdict.ok) {
+      return this.reject(repositories, transaction, verdict.failureCode, wallet.balance);
+    }
+    // INVARIANT: também garantido pelo índice único parcial de reversão (migration T35);
+    // esta consulta só transforma a violação em REJECTED auditável.
+    if ((await repositories.transactions.findProcessedReversalOf(reference.id)) !== null) {
+      const code = FailureCode.REFERENCE_ALREADY_REVERSED;
+      return this.reject(repositories, transaction, code, wallet.balance);
+    }
+    return this.applyMovement(submission, {
+      direction: transaction.ledgerDirectionFor(reference),
+      referenceTransactionId: reference.id,
+      overdraftCode: FailureCode.REVERSAL_WOULD_OVERDRAW,
+    });
+  }
+
+  private async pendReference(submission: Submission): Promise<SubmitResult> {
+    const { repositories, transaction, now } = submission;
+    transaction.markPendingReference();
+    await repositories.transactions.insert(transaction, {
+      resultingBalance: null,
+      pendingAttempts: 0,
+      nextAttemptAt: new Date(now.getTime() + PENDING_REFERENCE_FIRST_RETRY_MS),
+    });
+    return { outcome: "pendingReference", transactionId: transaction.id, idempotentReplay: false };
+  }
+
   // DECISION: LOSS fecha a rodada sem lançamento; o débito já ocorreu no BET. O saldo
   // resultante gravado é o atual, para o replay responder o mesmo valor.
   private async recordWithoutMovement(submission: Submission): Promise<SubmitResult> {
@@ -150,6 +187,27 @@ export class SubmitWagerTransactionUseCase {
       idempotentReplay: false,
     };
   }
+}
+
+// DECISION: primeira retentativa 5s depois; é a base do backoff do reprocessamento (T58).
+// Referência que chega fora de ordem costuma chegar em segundos.
+export const PENDING_REFERENCE_FIRST_RETRY_MS = 5_000;
+
+const UNRESOLVED_STATUSES: ReadonlySet<TransactionStatus> = new Set([
+  TransactionStatus.PENDING,
+  TransactionStatus.PENDING_REFERENCE,
+]);
+
+// DECISION: referência ainda pendente é tratada como ausente; reverter algo que não moveu
+// saldo seria incorreto, e ela pode se resolver depois.
+function isUnresolved(reference: WagerTransaction): boolean {
+  return UNRESOLVED_STATUSES.has(reference.status);
+}
+
+function requireReferenceExternalId(transaction: WagerTransaction): string {
+  const referenceId = transaction.referenceExternalTransactionId;
+  if (referenceId === null) throw new InvariantViolationError("reversal without reference");
+  return referenceId;
 }
 
 function settled(resultingBalance: Money | null): WagerTransactionPersistenceState {
