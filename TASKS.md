@@ -69,7 +69,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   `package.json` scripts: `lint`, `typecheck`, `test`, `test:unit`, `test:integration`, `test:concurrency`, `migration:up`, `migration:down`, `migration:create`, `start`, `start:dev`. Document how to run each through `docker compose run`.
   Done when: all scripts exist (placeholders allowed for ones that depend on later tasks).
 
-- [ ] **T10 Config module**
+- [x] **T10 Config module** (6b484d0)
   Typed, validated env config (DB url, SQS endpoint/queue names, worker intervals, limits). Fail fast on missing vars.
   Done when: app refuses to boot with a missing required var; unit test covers it.
 
