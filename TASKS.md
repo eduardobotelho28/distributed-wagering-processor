@@ -181,7 +181,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   Partial `UNIQUE` index on `wager_transactions(reference_transaction_id) WHERE status = 'PROCESSED' AND reference_transaction_id IS NOT NULL`.
   Done when: inserting two processed reversals of the same reference fails.
 
-- [ ] **T36 Migration roundtrip test**
+- [x] **T36 Migration roundtrip test** (53b3aaf)
   Test: empty DB -> up -> down -> up works.
   Done when: test is green in integration suite.
 
