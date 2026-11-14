@@ -395,21 +395,21 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
 
 ## Phase 8: Concurrency and failure tests (real parallelism)
 
-- [ ] **T84 Multi-instance harness**
+- [x] **T84 Multi-instance harness** (ff16823)
   Helper to start N app processes (separate Bun processes or compose scale) against the same Postgres/LocalStack, wait for ready, stop them.
   Done when: harness boots 3 instances.
 
-- [ ] **T85 Same bet 50x in parallel**
+- [x] **T85 Same bet 50x in parallel** (f41c81a)
   Done when: exactly one debit, 49 replays, invariant holds.
 
-- [ ] **T86 Mandatory scenario**
+- [x] **T86 Mandatory scenario** (e7b14b1)
   Balance 100.00, two BETs of 80.00 simultaneously: one PROCESSED, one REJECTED, balance 20.00, one DEBIT entry, retries do not duplicate.
   Done when: green and repeated 20 times without flake.
 
-- [ ] **T87 Different wallets in parallel**
+- [x] **T87 Different wallets in parallel** (e7a991e)
   Done when: N wallets processed concurrently, no cross-blocking beyond DB capacity, invariants hold for all.
 
-- [ ] **T88 Three or more instances**
+- [x] **T88 Three or more instances** (8e4029f)
   Mixed HTTP and SQS load on the same hot wallet.
   Done when: invariant holds, no negative balance.
 
