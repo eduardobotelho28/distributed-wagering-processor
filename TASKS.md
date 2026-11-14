@@ -101,7 +101,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   Scale, rounding behavior (no silent rounding: reject), invalid inputs table, immutability, currency conflict, large values, `0.10 + 0.20 === 0.30`.
   Done when: all cases pass.
 
-- [ ] **T17 FailureCode taxonomy**
+- [x] **T17 FailureCode taxonomy** (a13779c)
   Enum with stable machine-readable codes. At minimum: `INSUFFICIENT_FUNDS`, `REVERSAL_WOULD_OVERDRAW`, `REFERENCE_NOT_FOUND`, `REFERENCE_ALREADY_REVERSED`, `REFERENCE_MISMATCH`, `INVALID_REFERENCE_KIND`, `REFERENCE_NOT_PROCESSED`, `AMOUNT_MISMATCH`, `CURRENCY_MISMATCH`, `WALLET_NOT_FOUND`, `REFERENCE_REQUIRED`, `INTERNAL_PERMANENT_ERROR` (FAILED only). Add a doc comment per code: who should do what (resend / fix payload / give up).
   Done when: each code states its retry guidance.
 
