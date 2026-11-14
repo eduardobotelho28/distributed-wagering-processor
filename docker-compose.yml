@@ -14,8 +14,7 @@ services:
       start_period: 10s
 
   localstack:
-    # DECISION: pinned to 3.8. Newer LocalStack images require an auth token,
-    # and the challenge must run with `docker compose up` and nothing else.
+    # Fixei a versão do LocalStack para 3.8, pois versões mais recentes exigem um token de autenticação, e a ideia é que o projeto rode executado com `docker compose up` e nada mais.
     image: localstack/localstack:3.8
     environment:
       SERVICES: sqs
@@ -23,8 +22,6 @@ services:
     ports:
       - "${LOCALSTACK_PORT:-4566}:4566"
     healthcheck:
-      # DECISION: check that SQS itself is up, not only the gateway.
-      # /_localstack/health returns 200 before services finish starting.
       test: ["CMD-SHELL", "curl -fs http://localhost:4566/_localstack/health | grep -Eq '\"sqs\": \"(available|running)\"'"]
       interval: 5s
       timeout: 3s
