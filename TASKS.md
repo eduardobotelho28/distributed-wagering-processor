@@ -241,7 +241,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   Inside UnitOfWork: lock wallet first, then lookup by idempotency key. Same key + same hash -> return stored result with `idempotentReplay: true` (using stored `resulting_balance`). Same key + different hash -> idempotency conflict. Add `// DECISION:` comment on lock-before-lookup.
   Done when: tests for first call, replay, conflict.
 
-- [ ] **T50 [CORE] BET**
+- [x] **T50 [CORE] BET** (d985b24)
   Debit, ledger entry, mark PROCESSED, store `resulting_balance`. Insufficient funds -> REJECTED with `INSUFFICIENT_FUNDS`, no ledger, no balance change.
   Done when: unit tests for both paths.
 
