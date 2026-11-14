@@ -285,7 +285,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
 
 ## Phase 4: HTTP
 
-- [ ] **T60 Error mapping**
+- [x] **T60 Error mapping** (b70faef)
   Global exception filter and a result-to-HTTP mapper implementing the fixed status table. Error body: `{ code, message, retryable }`.
   Done when: unit tests per mapping; table copied into a comment.
 
