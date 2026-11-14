@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { MikroORM } from "@mikro-orm/postgresql";
 import { loadConfig } from "../../../src/infrastructure/config/app-config";
+import { createSqsClient } from "../../../src/infrastructure/messaging/sqs-client";
 import { SqsHealthCheck } from "../../../src/infrastructure/health/sqs-health-check";
 import { buildMikroOrmOptions } from "../../../src/infrastructure/persistence/mikro-orm.config";
 import { type HttpTestApp, startHttpApp } from "../../support/http-app";
@@ -61,7 +62,13 @@ describe("health endpoints", () => {
     expect(recovered.status).toBe(200);
   });
 
-  test("the SQS check reports down for an unreachable endpoint", async () => {
-    expect(await new SqsHealthCheck("http://127.0.0.1:1").check()).toBe("down");
+  test("the SQS check reports down for an unreachable endpoint or a missing queue", async () => {
+    const sqs = loadConfig(process.env).sqs;
+    const unreachable = createSqsClient({ ...sqs, endpoint: "http://127.0.0.1:1" });
+    const reachable = createSqsClient(sqs);
+
+    expect(await new SqsHealthCheck(unreachable, sqs.transactionsQueue).check()).toBe("down");
+    expect(await new SqsHealthCheck(reachable, "missing-queue.fifo").check()).toBe("down");
+    expect(await new SqsHealthCheck(reachable, sqs.transactionsQueue).check()).toBe("up");
   });
 });
