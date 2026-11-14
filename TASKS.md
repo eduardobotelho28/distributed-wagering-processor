@@ -253,7 +253,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   Resolve reference by `(providerId, referenceExternalTransactionId)`, apply `ReversalPolicy`, credit. Reference not `PROCESSED` (still pending) is handled like a missing reference.
   Done when: tests for success and each rejection code.
 
-- [ ] **T53 [CORE] ROLLBACK**
+- [x] **T53 [CORE] ROLLBACK** (31fed89)
   Same resolution; direction is the inverse of the reference. If the inverse debit would make the balance negative -> REJECTED with `REVERSAL_WOULD_OVERDRAW`, auditable, no ledger.
   Done when: tests for rollback of BET, WIN and REFUND, plus overdraw.
 
