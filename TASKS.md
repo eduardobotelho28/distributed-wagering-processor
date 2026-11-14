@@ -121,7 +121,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   `debit(money, transactionId, now)` and `credit(...)` return the new `WalletLedgerEntry`, update balance, increment `version` only when the balance changes. Debit that would go negative returns/throws a domain result the use case can map to `INSUFFICIENT_FUNDS`. Currency mismatch throws.
   Done when: tests cover insufficient funds, exact-zero balance, currency mismatch, version increments.
 
-- [ ] **T22 [CORE] WagerTransaction: kinds, statuses, create**
+- [x] **T22 [CORE] WagerTransaction: kinds, statuses, create** (ba397c7)
   Enums, `create` (born `PENDING`), `rehydrate`, `requiresReference()` (REFUND, ROLLBACK), `affectsBalance()` (false for LOSS). Reject missing reference when required. Reject `OPENING` from external creation (separate internal factory for opening).
   Done when: tests cover each kind.
 
