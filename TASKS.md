@@ -402,7 +402,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
 - [x] **T85 Same bet 50x in parallel** (f41c81a)
   Done when: exactly one debit, 49 replays, invariant holds.
 
-- [ ] **T86 Mandatory scenario**
+- [x] **T86 Mandatory scenario** (e7b14b1)
   Balance 100.00, two BETs of 80.00 simultaneously: one PROCESSED, one REJECTED, balance 20.00, one DEBIT entry, retries do not duplicate.
   Done when: green and repeated 20 times without flake.
 
