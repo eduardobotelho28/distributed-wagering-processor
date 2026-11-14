@@ -105,7 +105,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   Enum with stable machine-readable codes. At minimum: `INSUFFICIENT_FUNDS`, `REVERSAL_WOULD_OVERDRAW`, `REFERENCE_NOT_FOUND`, `REFERENCE_ALREADY_REVERSED`, `REFERENCE_MISMATCH`, `INVALID_REFERENCE_KIND`, `REFERENCE_NOT_PROCESSED`, `AMOUNT_MISMATCH`, `CURRENCY_MISMATCH`, `WALLET_NOT_FOUND`, `REFERENCE_REQUIRED`, `INTERNAL_PERMANENT_ERROR` (FAILED only). Add a doc comment per code: who should do what (resend / fix payload / give up).
   Done when: each code states its retry guidance.
 
-- [ ] **T18 Domain errors**
+- [x] **T18 Domain errors** (390bf78)
   `InvalidMoneyError`, `CurrencyMismatchError`, `InvalidTransactionStateError`, `InvariantViolationError`. Programmer errors are exceptions; business rejections are NOT exceptions.
   Done when: errors carry a stable `code`.
 
