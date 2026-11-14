@@ -1,0 +1,7 @@
+export enum TransactionStatus {
+  PENDING = "PENDING",
+  PENDING_REFERENCE = "PENDING_REFERENCE",
+  PROCESSED = "PROCESSED",
+  REJECTED = "REJECTED",
+  FAILED = "FAILED",
+}
