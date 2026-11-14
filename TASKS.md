@@ -335,7 +335,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   Parse the README message. Invalid or `OPENING` -> classified as permanent (DLQ path). `idempotencyKey` comes from the message.
   Done when: unit tests.
 
-- [ ] **T72 [CORE] Consumer: inbox dedupe + same use case**
+- [x] **T72 [CORE] Consumer: inbox dedupe + same use case** (50e5f11)
   In ONE transaction: `inbox.tryInsert(consumerName, messageId)`; if not new and processed -> ack without effects; else run the same `SubmitWagerTransaction` logic and `markProcessed`. Payload hash stored in inbox.
   Done when: redelivered message produces no second effect.
 
