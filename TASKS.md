@@ -73,7 +73,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   Typed, validated env config (DB url, SQS endpoint/queue names, worker intervals, limits). Fail fast on missing vars.
   Done when: app refuses to boot with a missing required var; unit test covers it.
 
-- [ ] **T11 CI**
+- [x] **T11 CI** (6b2bd92, 4db2024)
   GitHub Actions: install, lint, typecheck, unit tests.
   Done when: workflow green on a PR.
 

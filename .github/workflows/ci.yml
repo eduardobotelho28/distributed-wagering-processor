@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      # Aqui decide que CI roda dentro do mesmo Dockerfile usado localmente em vez de setup-bun no runner, para que "tudo rode no Docker" também seja válido no CI e a versão do Bun não possa divergir entre dev e CI.
+      - name: Build image (install deps)
+        run: docker build -t dwp-ci .
+
+      - name: Lint
+        run: docker run --rm dwp-ci bun run lint
+
+      - name: Typecheck
+        run: docker run --rm dwp-ci bun run typecheck
+
+      - name: Unit tests
+        run: docker run --rm dwp-ci bun run test:unit
