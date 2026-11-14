@@ -1,15 +1,14 @@
 import Decimal from "decimal.js";
 import { InvalidMoneyError } from "./invalid-money.error";
 
-// DECISION: isolated Decimal clone with exponent thresholds above NUMERIC(19,2) range,
-// so toString() never switches to scientific notation and the global config stays untouched.
+
+// Aqui eu crio uma cópia da classe Decimal com precisão de 40 dígitos e limites de expoente para evitar notação científica em valores monetários. Isso garante que os valores sejam representados de forma legível e consistente, especialmente quando lidamos com grandes quantias de dinheiro.
 const MoneyDecimal = Decimal.clone({ precision: 40, toExpPos: 40, toExpNeg: -40 });
 
-// INVARIANT: input amounts are non-negative, 1+ integer digits, at most 2 decimals.
-// Anything else (NaN, Infinity, "1e3", "", "-1", "1.234") never reaches Decimal.
-const AMOUNT_PATTERN = /^\d+(\.\d{1,2})?$/;
-const CURRENCY_PATTERN = /^[A-Z]{3}$/;
-const SCALE = 2;
+// Regras: Não negativo, pelo menos 1 dígito inteiro, no máximo 2 casas decimais. Qualquer outra coisa (NaN, Infinity, "1e3", "", "-1", "1.234") nunca chega ao Decimal.
+const AMOUNT_PATTERN      = /^\d+(\.\d{1,2})?$/;
+const CURRENCY_PATTERN    =   /^[A-Z]{3}$/;
+const SCALE               = 2;
 
 export interface MoneyJSON {
   amount: string;
@@ -17,6 +16,7 @@ export interface MoneyJSON {
 }
 
 export class Money {
+
   private constructor(
     private readonly value: Decimal,
     readonly currency: string,
@@ -25,11 +25,14 @@ export class Money {
   }
 
   static from(input: { amount: unknown; currency: unknown }): Money {
+    
     const currency = Money.parseCurrency(input.currency);
     if (typeof input.amount !== "string") throw new InvalidMoneyError("amount must be a string");
+
     if (!AMOUNT_PATTERN.test(input.amount)) {
       throw new InvalidMoneyError("amount must be a decimal string with up to 2 decimals");
     }
+
     return new Money(new MoneyDecimal(input.amount), currency);
   }
 
@@ -48,7 +51,7 @@ export class Money {
     return currency;
   }
 
-  // DECISION: manual scale-2 padding instead of toFixed (banned by lint in src/).
+  // aqui eu decido por setar manualmente a escala para 2 casas decimais em vez de usar o método toFixed, que é proibido pelo lint no diretório src/. Isso garante que os valores monetários sejam sempre representados com duas casas decimais, mesmo que o valor original tenha menos casas decimais.
   private formatAmount(): string {
     const [integer = "0", fraction = ""] = this.value.abs().toString().split(".");
     const sign = this.value.isNegative() ? "-" : "";

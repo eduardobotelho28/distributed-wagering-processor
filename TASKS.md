@@ -9,7 +9,7 @@ Source of truth for the work. Read `AGENTS.md` first.
 3. 1 to 3 small commits, Conventional Commits.
 4. Run `bun run lint && bun run typecheck && bun test` (inside Docker). Everything must pass.
 5. Check the box, add the commit hash(es) next to the task, commit `docs: mark tNN done`.
-6. Report in 5 lines max: what changed, which decisions you made, anything doubtful. Then STOP. Reports in PT-BR.
+6. Report in 5 lines max: what changed, which decisions you made, anything doubtful. Then STOP. Reports in PT-BR. Comments in code in PT-BR.
 7. If a task is ambiguous or conflicts with `AGENTS.md`, stop and ask.
 
 Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan mode and review the diff carefully.
