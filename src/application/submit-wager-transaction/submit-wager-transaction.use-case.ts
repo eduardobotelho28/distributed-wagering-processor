@@ -97,6 +97,7 @@ export class SubmitWagerTransactionUseCase {
     if (transaction.money.currency !== wallet.currency) {
       return this.reject(repositories, transaction, FailureCode.CURRENCY_MISMATCH, wallet.balance);
     }
+    if (!transaction.affectsBalance()) return this.recordWithoutMovement(submission);
     return this.applyMovement(submission, {
       direction: transaction.ledgerDirectionFor(),
       referenceTransactionId: null,
@@ -121,6 +122,15 @@ export class SubmitWagerTransactionUseCase {
     await repositories.transactions.insert(transaction, settled(wallet.balance));
     await repositories.ledger.insert(entry);
     await repositories.wallets.saveBalance(wallet, now);
+    return processed(transaction, wallet.balance);
+  }
+
+  // DECISION: LOSS fecha a rodada sem lançamento; o débito já ocorreu no BET. O saldo
+  // resultante gravado é o atual, para o replay responder o mesmo valor.
+  private async recordWithoutMovement(submission: Submission): Promise<SubmitResult> {
+    const { repositories, transaction, wallet, now } = submission;
+    transaction.markProcessed(now, null);
+    await repositories.transactions.insert(transaction, settled(wallet.balance));
     return processed(transaction, wallet.balance);
   }
 
