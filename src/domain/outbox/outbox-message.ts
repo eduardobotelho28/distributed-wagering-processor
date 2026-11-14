@@ -11,8 +11,10 @@ export interface OutboxEvent {
 
 export interface OutboxMessageProps {
   id: string;
+  aggregateId: string;
   eventType: string;
   payload: Record<string, unknown>;
+  occurredAt: Date;
   attempts: number;
   nextAttemptAt: Date;
   publishedAt: Date | null;
@@ -26,11 +28,15 @@ export const OUTBOX_BACKOFF_CAP_MS = 300_000;
 export class OutboxMessage {
   private constructor(private props: OutboxMessageProps) {}
 
-  static enqueue(event: OutboxEvent): OutboxMessage {
+  // DECISION: aggregateId vem de quem enfileira (id da transação ou carteira afetada), não do
+  // evento; assim o envelope do T29 não muda e o publisher pode agrupar por agregado.
+  static enqueue(event: OutboxEvent, aggregateId: string): OutboxMessage {
     return new OutboxMessage({
       id: event.eventId,
+      aggregateId,
       eventType: event.eventType,
       payload: event.toJSON(),
+      occurredAt: new Date(event.occurredAt),
       attempts: 0,
       nextAttemptAt: new Date(event.occurredAt),
       publishedAt: null,
@@ -69,6 +75,14 @@ export class OutboxMessage {
 
   get id(): string {
     return this.props.id;
+  }
+
+  get aggregateId(): string {
+    return this.props.aggregateId;
+  }
+
+  get occurredAt(): Date {
+    return new Date(this.props.occurredAt);
   }
 
   get eventType(): string {
