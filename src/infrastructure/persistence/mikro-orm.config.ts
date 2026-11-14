@@ -10,7 +10,12 @@ export function buildMikroOrmOptions(databaseUrl: string): Options {
     clientUrl: databaseUrl,
     entities: [WalletSchema, WagerTransactionSchema, WalletLedgerEntrySchema],
     extensions: [Migrator],
-    migrations: { path: "src/infrastructure/persistence/migrations", glob: "!(*.d).ts" },
+    // DECISION: sem snapshot; migrations são escritas à mão e o snapshot vazaria um arquivo por banco de teste.
+    migrations: {
+      path: "src/infrastructure/persistence/migrations",
+      glob: "!(*.d).ts",
+      snapshot: false,
+    },
     debug: false,
   });
 }
