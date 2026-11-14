@@ -1,7 +1,23 @@
-// DECISION: o port recebe o conjunto de repositórios como parâmetro de tipo. Os ports de
-// repositório chegam na T46; até lá a application não pode citar classes de infrastructure.
+import type {
+  InboxRepositoryPort,
+  LedgerRepositoryPort,
+  OutboxRepositoryPort,
+  WagerTransactionRepositoryPort,
+  WalletRepositoryPort,
+} from "./repositories";
+
+export interface TransactionalRepositories {
+  wallets: WalletRepositoryPort;
+  transactions: WagerTransactionRepositoryPort;
+  ledger: LedgerRepositoryPort;
+  inbox: InboxRepositoryPort;
+  outbox: OutboxRepositoryPort;
+}
+
 // INVARIANT: tudo que roda dentro de `run` compartilha uma única transação SQL; um erro
 // lançado desfaz carteira, ledger, transação, inbox e outbox juntos.
-export interface UnitOfWork<TRepositories> {
-  run<TResult>(work: (repositories: TRepositories) => Promise<TResult>): Promise<TResult>;
+export interface UnitOfWork {
+  run<TResult>(
+    work: (repositories: TransactionalRepositories) => Promise<TResult>,
+  ): Promise<TResult>;
 }

@@ -1,4 +1,9 @@
 import type { EntityManager } from "@mikro-orm/postgresql";
+import type {
+  LedgerPage,
+  LedgerPageQuery,
+  LedgerRepositoryPort,
+} from "../../../application/ports/repositories";
 import { Money } from "../../../domain/money/money";
 import type { WalletLedgerEntry } from "../../../domain/wallet/wallet-ledger-entry";
 import { decodeLedgerCursor, encodeLedgerCursor } from "../ledger-cursor";
@@ -6,21 +11,9 @@ import { ledgerEntryToDomain, ledgerEntryToModel } from "../mappers/wallet-ledge
 import { moneyFromColumns } from "../money-columns";
 import { WalletLedgerEntrySchema } from "../models/wallet-ledger-entry.model";
 
-export interface LedgerPageQuery {
-  walletId: string;
-  currency: string;
-  cursor: string | null;
-  limit: number;
-}
-
-export interface LedgerPage {
-  entries: WalletLedgerEntry[];
-  nextCursor: string | null;
-}
-
 // INVARIANT: só existe insert. O ledger é append-only; o trigger da migration T33 barra
 // UPDATE/DELETE mesmo que alguém tente por fora deste repositório.
-export class LedgerRepository {
+export class LedgerRepository implements LedgerRepositoryPort {
   constructor(private readonly em: EntityManager) {}
 
   async insert(entry: WalletLedgerEntry): Promise<void> {

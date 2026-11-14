@@ -1,4 +1,5 @@
 import { type EntityManager, LockMode } from "@mikro-orm/postgresql";
+import type { WalletRepositoryPort } from "../../../application/ports/repositories";
 import type { Wallet } from "../../../domain/wallet/wallet";
 import { walletToDomain, walletToModel } from "../mappers/wallet.mapper";
 import { WalletSchema } from "../models/wallet.model";
@@ -12,7 +13,7 @@ export class WalletNotPersistedError extends Error {
 
 // DECISION: leituras ignoram o identity map e escritas são nativas. O agregado de domínio é a
 // fonte do estado em memória; um modelo cacheado pelo ORM só abriria espaço para dado velho.
-export class WalletRepository {
+export class WalletRepository implements WalletRepositoryPort {
   constructor(private readonly em: EntityManager) {}
 
   // INVARIANT: precisa rodar dentro de uma transação; o MikroORM recusa lock fora dela.

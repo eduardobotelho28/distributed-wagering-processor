@@ -1,4 +1,5 @@
 import type { EntityManager } from "@mikro-orm/postgresql";
+import type { InboxRepositoryPort } from "../../../application/ports/repositories";
 import type { InboxMessage } from "../../../domain/inbox/inbox-message";
 import { inboxMessageToModel } from "../mappers/inbox-message.mapper";
 import { InboxMessageSchema } from "../models/inbox-message.model";
@@ -10,7 +11,7 @@ export class InboxMessageNotPersistedError extends Error {
   }
 }
 
-export class InboxRepository {
+export class InboxRepository implements InboxRepositoryPort {
   constructor(private readonly em: EntityManager) {}
 
   // INVARIANT: a dedup é a PK (consumer_name, message_id). ON CONFLICT DO NOTHING devolve
