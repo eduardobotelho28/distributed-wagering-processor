@@ -45,7 +45,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   `docker-compose.yml` with `postgres:16`, named volume, healthcheck (`pg_isready`), env from `.env`.
   Done when: `docker compose up -d postgres` is healthy.
 
-- [ ] **T04 Compose: LocalStack (SQS)**
+- [x] **T04 Compose: LocalStack (SQS)** (2f593fb)
   Add `localstack/localstack` with `SERVICES=sqs` and a healthcheck.
   Done when: `docker compose up -d localstack` is healthy.
 
