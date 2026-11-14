@@ -145,7 +145,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   `receive`, `rehydrate`, `isProcessed`, `markProcessed`. Cannot mark processed twice.
   Done when: tests pass.
 
-- [ ] **T28 OutboxMessage**
+- [x] **T28 OutboxMessage**
   `enqueue(event)`, `isPending`, `isDue(now)`, `markPublished`, `scheduleRetry(now)` with exponential backoff (base and cap as constants, documented with a DECISION comment).
   Done when: tests cover the backoff sequence and the cap.
 
