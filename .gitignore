@@ -1,0 +1,52 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# Environment (keep .env.example committed)
+.env
+.env.*
+!.env.example
+
+# Test and coverage output
+coverage/
+.nyc_output/
+test-results/
+load-test-results/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+bun-debug.log*
+
+# Docker local data (volumes, LocalStack state)
+.docker/
+volume/
+localstack-data/
+docker-compose.override.yml
+
+# Editors (keep shared .vscode settings if you add them)
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude Code: keep AGENTS.md, CLAUDE.md and .claude/commands committed
+.claude/settings.local.json
+.claude/*.local.*
+
+# Temporary files
+tmp/
+temp/
+*.tmp
