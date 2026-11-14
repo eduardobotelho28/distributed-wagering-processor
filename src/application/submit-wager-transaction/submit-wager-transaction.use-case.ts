@@ -9,6 +9,7 @@ import { WagerTransaction } from "../../domain/transaction/wager-transaction";
 import type { Wallet } from "../../domain/wallet/wallet";
 import { LedgerDirection } from "../../domain/wallet/wallet-ledger-entry";
 import type { Clock } from "../ports/clock";
+import { DuplicateIdempotencyKeyError } from "../ports/duplicate-idempotency-key.error";
 import type { EventContext } from "../ports/event-context";
 import type { IdGenerator } from "../ports/id-generator";
 import type {
@@ -53,11 +54,35 @@ export class SubmitWagerTransactionUseCase {
     private readonly ids: IdGenerator,
   ) {}
 
+  async execute(input: SubmitWagerTransactionInput): Promise<SubmitResult> {
+    try {
+      return await this.submit(input);
+    } catch (error) {
+      if (!(error instanceof DuplicateIdempotencyKeyError)) throw error;
+      return this.resolveKeyRace(input, error);
+    }
+  }
+
+  // DECISION: a mesma key enviada em paralelo para carteiras diferentes não serializa no lock
+  // (são linhas distintas). O UNIQUE(idempotency_key) decide: a perdedora tem a transação
+  // abortada, então relemos numa transação nova. O Postgres só acusa a violação depois que a
+  // vencedora commitou, logo a releitura sempre a encontra.
+  private resolveKeyRace(
+    input: SubmitWagerTransactionInput,
+    error: DuplicateIdempotencyKeyError,
+  ): Promise<SubmitResult> {
+    return this.unitOfWork.run(async (repositories) => {
+      const existing = await repositories.transactions.findByIdempotencyKey(input.idempotencyKey);
+      if (existing === null) throw error;
+      return replayOrConflict(existing, computePayloadHash(input));
+    });
+  }
+
   // DECISION: lock da carteira ANTES da busca pela idempotency key. Duas entregas da mesma
   // key para a mesma carteira serializam no lock; a segunda só procura a key depois que a
   // primeira commitou, então enxerga a transação gravada e vira replay em vez de duplicar.
   // Buscar antes do lock abriria a janela "ambas não acham, ambas processam".
-  execute(input: SubmitWagerTransactionInput): Promise<SubmitResult> {
+  private submit(input: SubmitWagerTransactionInput): Promise<SubmitResult> {
     return this.unitOfWork.run(async (repositories) => {
       const wallet = await repositories.wallets.findByIdForUpdate(input.walletId);
       const payloadHash = computePayloadHash(input);
