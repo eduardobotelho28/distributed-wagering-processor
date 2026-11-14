@@ -1,0 +1,6 @@
+{
+  "name": "distributed-wagering-processor",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module"
+}
