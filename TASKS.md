@@ -293,11 +293,11 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   Validate at the edge (ask before adding a lib; prefer what Nest already offers). Invalid payload -> 400 with `code`. `Idempotency-Key` header required.
   Done when: tests for missing header, invalid money, unknown kind, `OPENING`.
 
-- [ ] **T62 POST /wallets**
+- [x] **T62 POST /wallets** (d6f1019, c43be27)
   201 with README body; duplicate -> 409.
   Done when: e2e test against real DB.
 
-- [ ] **T63 GET /wallets/:walletId**
+- [x] **T63 GET /wallets/:walletId** (d6f1019, c43be27)
   Done when: e2e test, 404 for unknown id.
 
 - [ ] **T64 POST /wagering/transactions**
