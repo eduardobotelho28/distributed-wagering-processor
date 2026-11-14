@@ -1,4 +1,9 @@
 import { type EntityManager, LockMode } from "@mikro-orm/postgresql";
+import type {
+  StoredWagerTransaction,
+  WagerTransactionPersistenceState,
+  WagerTransactionRepositoryPort,
+} from "../../../application/ports/repositories";
 import { TransactionStatus } from "../../../domain/transaction/transaction-status";
 import type { WagerTransaction } from "../../../domain/transaction/wager-transaction";
 import {
@@ -6,17 +11,11 @@ import {
   wagerTransactionStateOf,
   wagerTransactionToDomain,
   wagerTransactionToModel,
-  type WagerTransactionPersistenceState,
 } from "../mappers/wager-transaction.mapper";
 import {
   type WagerTransactionModel,
   WagerTransactionSchema,
 } from "../models/wager-transaction.model";
-
-export interface StoredWagerTransaction {
-  transaction: WagerTransaction;
-  state: WagerTransactionPersistenceState;
-}
 
 export class WagerTransactionNotPersistedError extends Error {
   constructor(transactionId: string) {
@@ -30,7 +29,7 @@ function toDomainOrNull(model: WagerTransactionModel | null): WagerTransaction |
 }
 
 // DECISION: mesma política do WalletRepository: leituras fora do identity map, escritas nativas.
-export class WagerTransactionRepository {
+export class WagerTransactionRepository implements WagerTransactionRepositoryPort {
   constructor(private readonly em: EntityManager) {}
 
   // INVARIANT: duplicidade de idempotency_key / (provider, external id) é barrada pelos UNIQUE

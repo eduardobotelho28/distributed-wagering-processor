@@ -225,15 +225,15 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
 
 ## Phase 3: Use cases (application layer)
 
-- [ ] **T46 Ports and result types**
+- [x] **T46 Ports and result types** (19fea78)
   `SubmitResult` (processed | rejected | pendingReference, plus `idempotentReplay`), clock port, id generator port (UUID v7), event context.
   Done when: types compile; no infra imports.
 
-- [ ] **T47 CreateWallet**
+- [x] **T47 CreateWallet** (075b1ee)
   Creates wallet; if initial balance > 0, creates internal `OPENING` transaction (PROCESSED) and CREDIT ledger entry in the SAME transaction. Duplicate `(playerId, currency)` -> conflict result.
   Done when: unit test with fakes plus integration test with real DB.
 
-- [ ] **T48 Query use cases**
+- [x] **T48 Query use cases** (c4ec272)
   `GetWallet`, `GetLedger`, `GetTransactionById`, `GetTransactionByProviderExternalId`.
   Done when: unit tests.
 

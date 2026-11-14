@@ -1,13 +1,8 @@
+import { InvalidLedgerCursorError } from "../../application/ports/invalid-ledger-cursor.error";
+
 export interface LedgerCursor {
   createdAt: Date;
   id: string;
-}
-
-export class InvalidLedgerCursorError extends Error {
-  constructor() {
-    super("invalid ledger cursor");
-    this.name = "InvalidLedgerCursorError";
-  }
 }
 
 const SEPARATOR = "|";

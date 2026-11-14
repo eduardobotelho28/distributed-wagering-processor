@@ -1,15 +1,7 @@
-import type { Money } from "../../../domain/money/money";
+import type { WagerTransactionPersistenceState } from "../../../application/ports/repositories";
 import { WagerTransaction } from "../../../domain/transaction/wager-transaction";
 import { moneyFromColumns } from "../money-columns";
 import type { WagerTransactionModel } from "../models/wager-transaction.model";
-
-// DECISION: campos que só existem na persistência (saldo resultante e agenda de retentativa
-// do PENDING_REFERENCE) ficam fora do agregado; quem grava informa, o padrão é "nada agendado".
-export interface WagerTransactionPersistenceState {
-  resultingBalance: Money | null;
-  pendingAttempts: number;
-  nextAttemptAt: Date | null;
-}
 
 export const EMPTY_PERSISTENCE_STATE: WagerTransactionPersistenceState = {
   resultingBalance: null,

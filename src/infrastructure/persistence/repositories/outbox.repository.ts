@@ -1,4 +1,5 @@
 import { type EntityManager, LockMode } from "@mikro-orm/postgresql";
+import type { OutboxRepositoryPort } from "../../../application/ports/repositories";
 import type { OutboxMessage } from "../../../domain/outbox/outbox-message";
 import { outboxMessageToDomain, outboxMessageToModel } from "../mappers/outbox-message.mapper";
 import { OutboxMessageSchema } from "../models/outbox-message.model";
@@ -10,7 +11,7 @@ export class OutboxMessageNotPersistedError extends Error {
   }
 }
 
-export class OutboxRepository {
+export class OutboxRepository implements OutboxRepositoryPort {
   constructor(private readonly em: EntityManager) {}
 
   // INVARIANT: chamado dentro da mesma transação que altera saldo/ledger; o evento só

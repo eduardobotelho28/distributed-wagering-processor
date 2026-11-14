@@ -3,10 +3,8 @@ import { InboxMessage } from "../../../src/domain/inbox/inbox-message";
 import { Money } from "../../../src/domain/money/money";
 import { OutboxMessage } from "../../../src/domain/outbox/outbox-message";
 import { Wallet } from "../../../src/domain/wallet/wallet";
-import {
-  MikroOrmUnitOfWork,
-  type PersistenceRepositories,
-} from "../../../src/infrastructure/persistence/mikro-orm-unit-of-work";
+import type { TransactionalRepositories } from "../../../src/application/ports/unit-of-work";
+import { MikroOrmUnitOfWork } from "../../../src/infrastructure/persistence/mikro-orm-unit-of-work";
 import { InboxMessageSchema } from "../../../src/infrastructure/persistence/models/inbox-message.model";
 import { OutboxMessageSchema } from "../../../src/infrastructure/persistence/models/outbox-message.model";
 import { WagerTransactionSchema } from "../../../src/infrastructure/persistence/models/wager-transaction.model";
@@ -39,7 +37,7 @@ interface WrittenIds {
 }
 
 // Simula o caso de uso completo: carteira + transação + lançamento + inbox + outbox.
-async function writeEverything(repositories: PersistenceRepositories): Promise<WrittenIds> {
+async function writeEverything(repositories: TransactionalRepositories): Promise<WrittenIds> {
   const wallet = Wallet.open({
     id: crypto.randomUUID(),
     playerId: `player-${crypto.randomUUID()}`,
