@@ -406,7 +406,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   Balance 100.00, two BETs of 80.00 simultaneously: one PROCESSED, one REJECTED, balance 20.00, one DEBIT entry, retries do not duplicate.
   Done when: green and repeated 20 times without flake.
 
-- [ ] **T87 Different wallets in parallel**
+- [x] **T87 Different wallets in parallel** (e7a991e)
   Done when: N wallets processed concurrently, no cross-blocking beyond DB capacity, invariants hold for all.
 
 - [ ] **T88 Three or more instances**
