@@ -117,7 +117,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   `Wallet.open` (version 1, currency from initial balance), `rehydrate`, getters. Negative initial balance rejected.
   Done when: tests cover creation and rehydrate (no revalidation of transitions).
 
-- [ ] **T21 [CORE] Wallet: debit and credit**
+- [x] **T21 [CORE] Wallet: debit and credit** (13a26c6)
   `debit(money, transactionId, now)` and `credit(...)` return the new `WalletLedgerEntry`, update balance, increment `version` only when the balance changes. Debit that would go negative returns/throws a domain result the use case can map to `INSUFFICIENT_FUNDS`. Currency mismatch throws.
   Done when: tests cover insufficient funds, exact-zero balance, currency mismatch, version increments.
 
