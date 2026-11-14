@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { PENDING_REFERENCE_FIRST_RETRY_MS } from "../../../../src/application/submit-wager-transaction/submit-wager-transaction.use-case";
+import { PENDING_REFERENCE_BASE_DELAY_MS } from "../../../../src/application/wager-processing/pending-reference-policy";
 import { TransactionKind } from "../../../../src/domain/transaction/transaction-kind";
 import { TransactionStatus } from "../../../../src/domain/transaction/transaction-status";
 import { FIXED_NOW } from "../../../support/factories";
@@ -22,7 +22,7 @@ describe("SubmitWagerTransaction reference not found", () => {
     expect(stored?.state).toEqual({
       resultingBalance: null,
       pendingAttempts: 0,
-      nextAttemptAt: new Date(FIXED_NOW.getTime() + PENDING_REFERENCE_FIRST_RETRY_MS),
+      nextAttemptAt: new Date(FIXED_NOW.getTime() + PENDING_REFERENCE_BASE_DELAY_MS),
     });
     expect(fixture.unitOfWork.repositories.ledger.entries).toHaveLength(1);
     expect(fixture.wallet.balance.toJSON().amount).toBe("100.00");

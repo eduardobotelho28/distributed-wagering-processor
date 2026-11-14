@@ -19,6 +19,7 @@ import type {
 } from "../ports/repositories";
 import type { RecordedSubmitResult, SubmitResult } from "../ports/submit-result";
 import type { TransactionalRepositories, UnitOfWork } from "../ports/unit-of-work";
+import { nextPendingAttemptAt } from "../wager-processing/pending-reference-policy";
 import { SubmissionEvents } from "../wager-processing/submission-events";
 import {
   processTransaction,
@@ -157,15 +158,11 @@ async function pendReference(
   await repositories.transactions.insert(transaction, {
     resultingBalance: null,
     pendingAttempts: 0,
-    nextAttemptAt: new Date(events.now.getTime() + PENDING_REFERENCE_FIRST_RETRY_MS),
+    nextAttemptAt: nextPendingAttemptAt(0, events.now),
   });
   await events.pendingReference(transaction, requireReferenceExternalId(transaction));
   return { outcome: "pendingReference", transactionId: transaction.id, idempotentReplay: false };
 }
-
-// DECISION: primeira retentativa 5s depois; é a base do backoff do reprocessamento (T58).
-// Referência que chega fora de ordem costuma chegar em segundos.
-export const PENDING_REFERENCE_FIRST_RETRY_MS = 5_000;
 
 // DECISION: o replay responde com o saldo gravado em resulting_balance no momento do
 // processamento, não com o saldo atual; a mesma requisição recebe sempre a mesma resposta.
