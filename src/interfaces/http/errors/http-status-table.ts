@@ -2,6 +2,7 @@
 //
 //   situação                                   status  code                    retryable
 //   payload inválido / header ausente          400     INVALID_PAYLOAD (*)     false
+//   sem autenticação (com IdP ligado)          401     UNAUTHENTICATED         false
 //   recurso não encontrado                     404     <RECURSO>_NOT_FOUND     false
 //   conflito de idempotência / duplicidade     409     IDEMPOTENCY_CONFLICT    false
 //                                                      WALLET_ALREADY_EXISTS   false
@@ -20,6 +21,7 @@ export const HttpStatus = {
   CREATED: 201,
   ACCEPTED: 202,
   BAD_REQUEST: 400,
+  UNAUTHORIZED: 401,
   NOT_FOUND: 404,
   CONFLICT: 409,
   UNPROCESSABLE: 422,

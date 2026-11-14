@@ -2,6 +2,7 @@ import { Controller, Get, HttpCode, Inject, Res } from "@nestjs/common";
 import type { HealthCheck, HealthStatus } from "../../../application/ports/health-check";
 import { HttpStatus } from "../errors/http-status-table";
 import { HEALTH_CHECKS } from "../tokens";
+import { Public } from "../auth/public.decorator";
 
 interface StatusResponse {
   status(code: number): unknown;
@@ -12,6 +13,8 @@ export interface ReadinessBody {
   checks: Record<string, HealthStatus>;
 }
 
+// INVARIANT: health não exige autenticação (README §2).
+@Public()
 @Controller("health")
 export class HealthController {
   constructor(@Inject(HEALTH_CHECKS) private readonly checks: readonly HealthCheck[]) {}

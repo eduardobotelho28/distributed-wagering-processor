@@ -1,5 +1,6 @@
 import { MikroORM } from "@mikro-orm/postgresql";
 import { Module, type Provider } from "@nestjs/common";
+import { APP_GUARD } from "@nestjs/core";
 import { CreateWalletUseCase } from "../../application/create-wallet/create-wallet.use-case";
 import type { Clock } from "../../application/ports/clock";
 import type { HealthCheck } from "../../application/ports/health-check";
@@ -13,6 +14,7 @@ import { GetTransactionByProviderExternalIdUseCase } from "../../application/que
 import { GetWalletUseCase } from "../../application/queries/get-wallet.use-case";
 import { ReconcileWalletUseCase } from "../../application/reconcile-wallet/reconcile-wallet.use-case";
 import { SubmitWagerTransactionUseCase } from "../../application/submit-wager-transaction/submit-wager-transaction.use-case";
+import { TrustAllProviderIdentity } from "../../infrastructure/auth/trust-all-provider-identity";
 import type { AppConfig } from "../../infrastructure/config/app-config";
 import { APP_CONFIG } from "../../infrastructure/config/app-config.module";
 import { DatabaseHealthCheck } from "../../infrastructure/health/database-health-check";
@@ -24,6 +26,7 @@ import { SystemClock } from "../../infrastructure/time/system-clock";
 import { UuidV7IdGenerator } from "../../infrastructure/time/uuid-v7-id-generator";
 import { TransactionsController } from "./controllers/transactions.controller";
 import { WalletsController } from "./controllers/wallets.controller";
+import { AuthGuard } from "./auth/auth.guard";
 import { HealthController } from "./health/health.controller";
 import * as tokens from "./tokens";
 
@@ -45,6 +48,8 @@ const infrastructure: Provider[] = [
     ],
     inject: [MikroORM, APP_CONFIG],
   },
+  { provide: tokens.PROVIDER_IDENTITY, useValue: new TrustAllProviderIdentity() },
+  { provide: APP_GUARD, useClass: AuthGuard },
 ];
 
 const core = [tokens.UNIT_OF_WORK, tokens.CLOCK, tokens.ID_GENERATOR];
