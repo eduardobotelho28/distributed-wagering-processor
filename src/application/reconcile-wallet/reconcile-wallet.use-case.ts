@@ -53,6 +53,6 @@ export class ReconcileWalletUseCase {
       difference: report.difference.toString(),
       checkedEntries: report.checkedEntries,
     });
-    this.metrics.increment("reconciliation_divergences_total");
+    this.metrics.increment("reconciliation_divergences_total", {});
   }
 }

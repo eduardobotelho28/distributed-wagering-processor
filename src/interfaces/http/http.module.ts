@@ -24,6 +24,7 @@ import { TransactionsController } from "./controllers/transactions.controller";
 import { WalletsController } from "./controllers/wallets.controller";
 import { AuthGuard } from "./auth/auth.guard";
 import { HealthController } from "./health/health.controller";
+import { MetricsController } from "./metrics/metrics.controller";
 import * as tokens from "../tokens";
 
 const infrastructure: Provider[] = [
@@ -82,7 +83,7 @@ const useCases: Provider[] = [
 ];
 
 @Module({
-  controllers: [WalletsController, TransactionsController, HealthController],
+  controllers: [WalletsController, TransactionsController, HealthController, MetricsController],
   providers: [...infrastructure, ...useCases],
 })
 export class HttpModule {}

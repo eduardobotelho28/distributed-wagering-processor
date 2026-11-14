@@ -72,3 +72,15 @@ describe("health endpoints", () => {
     expect(await new SqsHealthCheck(reachable, sqs.transactionsQueue).check()).toBe("up");
   });
 });
+
+describe("metrics endpoint", () => {
+  test("exposes Prometheus text without authentication", async () => {
+    const reply = await fetch(`${app.baseUrl}/metrics`);
+    const text = await reply.text();
+
+    expect(reply.status).toBe(200);
+    expect(reply.headers.get("content-type")).toContain("text/plain");
+    expect(text).toContain("# TYPE wager_transactions_total counter");
+    expect(text).toContain("# TYPE outbox_publish_lag_seconds histogram");
+  });
+});

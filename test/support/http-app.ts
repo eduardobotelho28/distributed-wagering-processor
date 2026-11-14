@@ -14,6 +14,7 @@ export interface HttpReply {
 
 export interface HttpTestApp {
   db: TestDatabase;
+  baseUrl: string;
   request(method: string, path: string, init?: RequestOptions): Promise<HttpReply>;
   close(): Promise<void>;
 }
@@ -41,6 +42,7 @@ export async function startHttpApp(): Promise<HttpTestApp> {
   const baseUrl = (await app.getUrl()).replace("[::1]", "127.0.0.1");
   return {
     db,
+    baseUrl,
     async request(method, path, init = {}) {
       const payload =
         init.rawBody ?? (init.body === undefined ? undefined : JSON.stringify(init.body));

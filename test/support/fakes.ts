@@ -5,7 +5,13 @@ import type {
   ReceiveOptions,
 } from "../../src/application/ports/message-queue";
 import type { LogFields, Logger } from "../../src/application/ports/logger";
-import type { CounterName, Metrics } from "../../src/application/ports/metrics";
+import type {
+  CounterLabels,
+  CounterName,
+  HistogramLabels,
+  HistogramName,
+  Metrics,
+} from "../../src/application/ports/metrics";
 import type { Clock } from "../../src/application/ports/clock";
 import { DuplicateIdempotencyKeyError } from "../../src/application/ports/duplicate-idempotency-key.error";
 import type { IdGenerator } from "../../src/application/ports/id-generator";
@@ -270,9 +276,20 @@ export class RecordingLogger implements Logger {
 
 export class RecordingMetrics implements Metrics {
   readonly counters = new Map<CounterName, number>();
+  readonly increments: { name: CounterName; labels: Record<string, string> }[] = [];
+  readonly observations: {
+    name: HistogramName;
+    seconds: number;
+    labels: Record<string, string>;
+  }[] = [];
 
-  increment(name: CounterName): void {
+  increment<N extends CounterName>(name: N, labels: CounterLabels[N]): void {
     this.counters.set(name, (this.counters.get(name) ?? 0) + 1);
+    this.increments.push({ name, labels: { ...labels } });
+  }
+
+  observe<N extends HistogramName>(name: N, seconds: number, labels: HistogramLabels[N]): void {
+    this.observations.push({ name, seconds, labels: { ...labels } });
   }
 }
 
