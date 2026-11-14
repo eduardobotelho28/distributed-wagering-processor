@@ -16,9 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # DECISION: CI runs inside the same Dockerfile image used locally instead of
-      # setup-bun on the runner, so "everything runs in Docker" holds in CI too and
-      # the Bun version cannot drift between dev and CI.
+      # Aqui decide que CI roda dentro do mesmo Dockerfile usado localmente em vez de setup-bun no runner, para que "tudo rode no Docker" também seja válido no CI e a versão do Bun não possa divergir entre dev e CI.
       - name: Build image (install deps)
         run: docker build -t dwp-ci .
 
@@ -28,7 +26,5 @@ jobs:
       - name: Typecheck
         run: docker run --rm dwp-ci bun run typecheck
 
-      # RISK: integration/concurrency suites need Postgres + LocalStack and are not run
-      # here yet; they join CI once those suites exist.
       - name: Unit tests
         run: docker run --rm dwp-ci bun run test:unit
