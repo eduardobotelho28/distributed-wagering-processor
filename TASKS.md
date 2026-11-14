@@ -213,7 +213,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   Inbox: `tryInsert` (`ON CONFLICT DO NOTHING`, returns whether it was new), `markProcessed`. Outbox: `insert`, `lockDueBatchSkipLocked(limit, now)`, `markPublished`, `scheduleRetry`.
   Done when: integration tests, including two concurrent `lockDueBatch` calls returning disjoint rows.
 
-- [ ] **T44 [CORE] UnitOfWork**
+- [x] **T44 [CORE] UnitOfWork** (5103c20)
   Port in `application`; MikroORM implementation wrapping `em.transactional`. Everything inside shares one transaction.
   Done when: test proves rollback of wallet, ledger, inbox and outbox together on a thrown error.
 
