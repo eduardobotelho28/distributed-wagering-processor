@@ -1,14 +1,19 @@
 import "reflect-metadata";
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
+import { loadConfig } from "./infrastructure/config/app-config";
 
-const DEFAULT_PORT = "3000";
-
+// DECISION: config is validated before Nest boots, so a missing var stops the process
+// with a clear message instead of failing later inside a provider.
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule);
+  const config = loadConfig(process.env);
+  const app = await NestFactory.create(AppModule.register(config));
   app.enableShutdownHooks();
 
-  await app.listen(process.env.APP_PORT ?? DEFAULT_PORT, "0.0.0.0");
+  await app.listen(config.port, "0.0.0.0");
 }
 
-void bootstrap();
+bootstrap().catch((error: unknown) => {
+  console.error(error instanceof Error ? error.message : "Bootstrap failed");
+  process.exit(1);
+});
