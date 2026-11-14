@@ -327,7 +327,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
 
 ## Phase 5: SQS consumer
 
-- [ ] **T70 SQS port and adapter**
+- [x] **T70 SQS port and adapter** (f05b53a)
   `MessageQueue` port (receive, ack, change visibility, send) and AWS SDK v3 adapter for LocalStack.
   Done when: integration test sends and receives on the FIFO queue.
 
