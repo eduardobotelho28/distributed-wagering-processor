@@ -1,5 +1,7 @@
 import { Migrator } from "@mikro-orm/migrations";
 import { defineConfig, type Options } from "@mikro-orm/postgresql";
+import { InboxMessageSchema } from "./models/inbox-message.model";
+import { OutboxMessageSchema } from "./models/outbox-message.model";
 import { WagerTransactionSchema } from "./models/wager-transaction.model";
 import { WalletLedgerEntrySchema } from "./models/wallet-ledger-entry.model";
 import { WalletSchema } from "./models/wallet.model";
@@ -8,7 +10,13 @@ import { WalletSchema } from "./models/wallet.model";
 export function buildMikroOrmOptions(databaseUrl: string): Options {
   return defineConfig({
     clientUrl: databaseUrl,
-    entities: [WalletSchema, WagerTransactionSchema, WalletLedgerEntrySchema],
+    entities: [
+      WalletSchema,
+      WagerTransactionSchema,
+      WalletLedgerEntrySchema,
+      InboxMessageSchema,
+      OutboxMessageSchema,
+    ],
     extensions: [Migrator],
     // DECISION: sem snapshot; migrations são escritas à mão e o snapshot vazaria um arquivo por banco de teste.
     migrations: {
