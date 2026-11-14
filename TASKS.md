@@ -277,7 +277,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   For one due transaction: retry resolution. Resolved -> process normally. Still missing and attempts/TTL exhausted -> REJECTED `REFERENCE_NOT_FOUND` + `WagerTransactionRejected` event. Else schedule next attempt with exponential backoff. Choose limits (suggested: max 8 attempts, base 5s, cap 5min, TTL 1h) and justify with a `// DECISION:` comment.
   Done when: tests for the three outcomes.
 
-- [ ] **T59 ReconcileWallet**
+- [x] **T59 ReconcileWallet** (36dc680)
   Recompute balance from ledger, compare with stored, return the README response shape. On divergence: log at error level, increment a metric, `consistent: false`. Never fix silently.
   Done when: test with a deliberately corrupted balance.
 
