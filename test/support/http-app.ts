@@ -31,7 +31,7 @@ export async function startHttpApp(): Promise<HttpTestApp> {
   const config = {
     ...base,
     database: { url: db.url },
-    workers: { ...base.workers, sqsConsumerEnabled: false },
+    workers: { ...base.workers, sqsConsumerEnabled: false, backgroundWorkersEnabled: false },
   };
   const app: INestApplication = await NestFactory.create(AppModule.register(config), {
     logger: false,

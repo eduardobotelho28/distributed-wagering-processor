@@ -17,6 +17,7 @@ import { SystemClock } from "../../../src/infrastructure/time/system-clock";
 import { UuidV7IdGenerator } from "../../../src/infrastructure/time/uuid-v7-id-generator";
 import { CONSUMER_NAME } from "../../../src/interfaces/sqs/sqs-consumer.module";
 import { WagerMessageConsumer } from "../../../src/interfaces/sqs/wager-message.consumer";
+import { startAppProcess, waitFor } from "../../support/app-process";
 import { RecordingLogger } from "../../support/fakes";
 import { assertLedgerInvariant } from "../../support/ledger-invariant";
 import { createTestDatabase, type TestDatabase } from "../../support/test-database";
@@ -88,26 +89,12 @@ function countBets(walletId: string): Promise<number> {
   return db.orm.em.fork().count(WagerTransactionSchema, { walletId, kind: TransactionKind.BET });
 }
 
-async function waitFor(condition: () => Promise<boolean>, timeoutMs: number): Promise<void> {
-  const deadline = Date.now() + timeoutMs;
-  while (!(await condition())) {
-    if (Date.now() > deadline) throw new Error("condition not met in time");
-    await Bun.sleep(50);
-  }
-}
-
-function startApp(): ReturnType<typeof Bun.spawn> {
-  return Bun.spawn(["bun", "src/main.ts"], {
-    env: {
-      ...process.env,
-      DATABASE_URL: db.url,
-      SQS_TRANSACTIONS_QUEUE: mainQueue,
-      SQS_TRANSACTIONS_DLQ: deadLetterQueue,
-      APP_PORT: String(20_000 + Math.floor(Math.random() * 20_000)),
-      SQS_CONSUMER_ENABLED: "true",
-    },
-    stdout: "ignore",
-    stderr: "pipe",
+function startApp() {
+  return startAppProcess({
+    DATABASE_URL: db.url,
+    SQS_TRANSACTIONS_QUEUE: mainQueue,
+    SQS_TRANSACTIONS_DLQ: deadLetterQueue,
+    SQS_CONSUMER_ENABLED: "true",
   });
 }
 
