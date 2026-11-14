@@ -193,7 +193,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   ORM entities live in `infrastructure` only. Mappers convert model <-> domain via `rehydrate`. Domain classes get no decorators.
   Done when: mapper tests for wallet, transaction, ledger entry.
 
-- [ ] **T39 Test harness and invariant checker**
+- [x] **T39 Test harness and invariant checker** (a4519b9)
   Integration helpers: fresh schema per suite, factories, and `assertLedgerInvariant(walletId)`: wallet balance == sum of credits - debits, each entry balanced, entries chain correctly. Reused by every later test.
   Done when: helper has its own test.
 
