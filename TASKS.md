@@ -89,7 +89,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   `Money.from({amount, currency})`, `Money.zero(currency)`. Accept only decimal strings with exactly 1+ integer digits and up to 2 decimals; normalize to scale 2. Reject: NaN, Infinity, scientific notation, empty, more than 2 decimals, negative (in input contracts), non-string.
   Done when: private constructor, immutable, `toJSON()` returns `{amount: "25.00", currency}`.
 
-- [ ] **T14 [CORE] Money: arithmetic**
+- [x] **T14 [CORE] Money: arithmetic** (c490b19)
   `add`, `subtract`, `negate` returning new instances; `assertSameCurrency` throwing a domain error. `subtract` may produce a negative Money internally (the Wallet decides if it is allowed).
   Done when: no `number` anywhere in the file.
 
