@@ -85,7 +85,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
 
 ## Phase 1: Domain (pure TypeScript, no Nest, no ORM)
 
-- [ ] **T13 [CORE] Money: construction and parsing**
+- [x] **T13 [CORE] Money: construction and parsing** (b46e668, caf1c0f)
   `Money.from({amount, currency})`, `Money.zero(currency)`. Accept only decimal strings with exactly 1+ integer digits and up to 2 decimals; normalize to scale 2. Reject: NaN, Infinity, scientific notation, empty, more than 2 decimals, negative (in input contracts), non-string.
   Done when: private constructor, immutable, `toJSON()` returns `{amount: "25.00", currency}`.
 
