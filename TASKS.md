@@ -347,7 +347,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   Use `ApproximateReceiveCount`; at the limit, move to DLQ with failure reason. Persist a `FAILED` transaction when the transaction identity is known (auditable).
   Done when: integration test ends with the message in DLQ.
 
-- [ ] **T75 Graceful shutdown**
+- [x] **T75 Graceful shutdown** (a22cb2f)
   On SIGTERM: stop polling, finish in-flight messages, return visibility of unstarted ones, close connections.
   Done when: test sends SIGTERM mid-processing, no lost or duplicated effect.
 
