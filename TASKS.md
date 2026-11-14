@@ -413,7 +413,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   Mixed HTTP and SQS load on the same hot wallet.
   Done when: invariant holds, no negative balance.
 
-- [ ] **T89 Worker killed after commit, before ack**
+- [x] **T89 Worker killed after commit, before ack** (ca4d947)
   `kill -9` after commit; message redelivered; no duplicate effect.
   Done when: green.
 
