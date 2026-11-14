@@ -97,7 +97,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   `isZero`, `isPositive`, `isNegative`, `isLessThan`, `equals`, `toString`.
   Done when: cross-currency comparison throws.
 
-- [ ] **T16 Money unit tests**
+- [x] **T16 Money unit tests** (6ee52c9)
   Scale, rounding behavior (no silent rounding: reject), invalid inputs table, immutability, currency conflict, large values, `0.10 + 0.20 === 0.30`.
   Done when: all cases pass.
 
