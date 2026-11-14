@@ -141,7 +141,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   Pure domain function that validates a reversal against its reference: allowed kinds (REFUND -> BET only; ROLLBACK -> BET, WIN, REFUND), reference is `PROCESSED`, same provider, player, wallet, currency, round, equal amount. Returns a `FailureCode` or ok.
   Done when: one test per failure code.
 
-- [ ] **T27 InboxMessage**
+- [x] **T27 InboxMessage** (3d0e8f3)
   `receive`, `rehydrate`, `isProcessed`, `markProcessed`. Cannot mark processed twice.
   Done when: tests pass.
 
