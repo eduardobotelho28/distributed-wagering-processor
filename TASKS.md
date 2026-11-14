@@ -129,7 +129,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   `markProcessed`, `markPendingReference`, `reject`, `fail`, `isTerminal`. Terminal states (`PROCESSED`, `REJECTED`, `FAILED`) throw `InvalidTransactionStateError` on any transition. Write the transition table as a comment above the class: `PENDING -> PROCESSED | PENDING_REFERENCE | REJECTED | FAILED`, `PENDING_REFERENCE -> PROCESSED | REJECTED | FAILED`.
   Done when: a test iterates every (from, action) pair.
 
-- [ ] **T24 WagerTransaction: ledger direction and payload match**
+- [x] **T24 WagerTransaction: ledger direction and payload match** (71ef55d)
   `ledgerDirectionFor(reference?)`: BET debit; WIN, REFUND credit; ROLLBACK inverse of the reference (reference BET -> credit, WIN -> debit, REFUND -> debit). `matchesPayload(hash)`.
   Done when: table-driven test covers every ROLLBACK reference kind.
 

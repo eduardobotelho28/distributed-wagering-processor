@@ -2,6 +2,7 @@ import { InvalidTransactionStateError } from "../errors/invalid-transaction-stat
 import { InvariantViolationError } from "../errors/invariant-violation.error";
 import type { FailureCode } from "../errors/failure-code";
 import type { Money } from "../money/money";
+import { LedgerDirection } from "../wallet/wallet-ledger-entry";
 import { ReferenceRequiredError } from "./reference-required.error";
 import { TransactionKind } from "./transaction-kind";
 import { TransactionStatus } from "./transaction-status";
@@ -40,6 +41,21 @@ export type OpenWagerTransactionInput = Omit<
 const KINDS_REQUIRING_REFERENCE: ReadonlySet<TransactionKind> = new Set([
   TransactionKind.REFUND,
   TransactionKind.ROLLBACK,
+]);
+
+const DIRECT_DIRECTION: ReadonlyMap<TransactionKind, LedgerDirection> = new Map([
+  [TransactionKind.BET, LedgerDirection.DEBIT],
+  [TransactionKind.WIN, LedgerDirection.CREDIT],
+  [TransactionKind.REFUND, LedgerDirection.CREDIT],
+  [TransactionKind.OPENING, LedgerDirection.CREDIT],
+]);
+
+// DECISION: ROLLBACK desfaz a referência, então usa a direção inversa dela.
+// Só BET, WIN e REFUND podem ser revertidos; o caso de uso rejeita outros com INVALID_REFERENCE_KIND.
+const ROLLBACK_DIRECTION: ReadonlyMap<TransactionKind, LedgerDirection> = new Map([
+  [TransactionKind.BET, LedgerDirection.CREDIT],
+  [TransactionKind.WIN, LedgerDirection.DEBIT],
+  [TransactionKind.REFUND, LedgerDirection.DEBIT],
 ]);
 
 const TERMINAL_STATUSES: ReadonlySet<TransactionStatus> = new Set([
@@ -134,6 +150,22 @@ export class WagerTransaction {
     if (this.isTerminal()) {
       throw new InvalidTransactionStateError(this.props.status, action);
     }
+  }
+
+  // INVARIANT: só é chamado quando affectsBalance() é true; LOSS não gera lançamento.
+  ledgerDirectionFor(reference?: WagerTransaction): LedgerDirection {
+    const direction =
+      this.props.kind === TransactionKind.ROLLBACK
+        ? ROLLBACK_DIRECTION.get(reference?.kind ?? this.props.kind)
+        : DIRECT_DIRECTION.get(this.props.kind);
+    if (direction === undefined) {
+      throw new InvariantViolationError(`no ledger direction for ${this.props.kind}`);
+    }
+    return direction;
+  }
+
+  matchesPayload(payloadHash: string): boolean {
+    return this.props.payloadHash === payloadHash;
   }
 
   requiresReference(): boolean {
