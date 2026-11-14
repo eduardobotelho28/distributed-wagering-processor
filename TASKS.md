@@ -331,7 +331,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   `MessageQueue` port (receive, ack, change visibility, send) and AWS SDK v3 adapter for LocalStack.
   Done when: integration test sends and receives on the FIFO queue.
 
-- [ ] **T71 Message schema and validation**
+- [x] **T71 Message schema and validation** (b988136)
   Parse the README message. Invalid or `OPENING` -> classified as permanent (DLQ path). `idempotencyKey` comes from the message.
   Done when: unit tests.
 
