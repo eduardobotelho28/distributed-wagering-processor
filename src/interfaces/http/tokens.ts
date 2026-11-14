@@ -5,6 +5,7 @@ export const CLOCK = Symbol("CLOCK");
 export const ID_GENERATOR = Symbol("ID_GENERATOR");
 export const LOGGER = Symbol("LOGGER");
 export const METRICS = Symbol("METRICS");
+export const HEALTH_CHECKS = Symbol("HEALTH_CHECKS");
 export const CREATE_WALLET = Symbol("CREATE_WALLET");
 export const GET_WALLET = Symbol("GET_WALLET");
 export const GET_LEDGER = Symbol("GET_LEDGER");
