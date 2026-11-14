@@ -1,7 +1,8 @@
+import { AbandonWagerMessageUseCase } from "../../src/application/abandon-wager-message/abandon-wager-message.use-case";
 import { ConsumeWagerMessageUseCase } from "../../src/application/consume-wager-message/consume-wager-message.use-case";
 import type { ReceivedMessage } from "../../src/application/ports/message-queue";
 import { WagerMessageConsumer } from "../../src/interfaces/sqs/wager-message.consumer";
-import { RecordingMessageQueue } from "./fakes";
+import { RecordingLogger, RecordingMessageQueue } from "./fakes";
 import { createSubmitFixture, type SubmitFixture } from "./submit-fixture";
 
 export const QUEUE = "wager-transactions.fifo";
@@ -9,6 +10,7 @@ export const DLQ = "wager-transactions-dlq.fifo";
 
 export interface ConsumerFixture {
   submit: SubmitFixture;
+  logger: RecordingLogger;
   queue: RecordingMessageQueue;
   consumer: WagerMessageConsumer;
   message(data?: Record<string, unknown>, receiveCount?: number): ReceivedMessage;
@@ -17,13 +19,25 @@ export interface ConsumerFixture {
 export async function createConsumerFixture(balance = "100.00"): Promise<ConsumerFixture> {
   const submit = await createSubmitFixture(balance);
   const queue = new RecordingMessageQueue();
-  const useCase = new ConsumeWagerMessageUseCase(submit.unitOfWork, submit.clock, submit.ids);
-  const consumer = new WagerMessageConsumer(queue, useCase, {
-    queueName: QUEUE,
-    consumerName: "wager-transactions-consumer",
-  });
+  const logger = new RecordingLogger();
+  const consumer = new WagerMessageConsumer(
+    {
+      queue,
+      consume: new ConsumeWagerMessageUseCase(submit.unitOfWork, submit.clock, submit.ids),
+      abandon: new AbandonWagerMessageUseCase(submit.unitOfWork, submit.clock, submit.ids),
+      clock: submit.clock,
+      logger,
+    },
+    {
+      queueName: QUEUE,
+      deadLetterQueueName: DLQ,
+      consumerName: "wager-transactions-consumer",
+      maxReceives: 5,
+    },
+  );
   return {
     submit,
+    logger,
     queue,
     consumer,
     message(data = {}, receiveCount = 1) {
