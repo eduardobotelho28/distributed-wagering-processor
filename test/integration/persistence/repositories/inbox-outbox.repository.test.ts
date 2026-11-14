@@ -28,15 +28,13 @@ function receive(messageId: string): InboxMessage {
 }
 
 function enqueue(occurredAt: Date): OutboxMessage {
-  return OutboxMessage.enqueue(
-    {
-      eventId: crypto.randomUUID(),
-      eventType: "WagerTransactionProcessed",
-      occurredAt,
-      toJSON: () => ({ data: { amount: "10.00", currency: "BRL" } }),
-    },
-    crypto.randomUUID(),
-  );
+  return OutboxMessage.enqueue({
+    eventId: crypto.randomUUID(),
+    eventType: "WagerTransactionProcessed",
+    aggregateId: crypto.randomUUID(),
+    occurredAt,
+    toJSON: () => ({ data: { amount: "10.00", currency: "BRL" } }),
+  });
 }
 
 async function insertOutbox(occurredAt: Date): Promise<OutboxMessage> {

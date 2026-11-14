@@ -2,6 +2,9 @@
 
 exports[`integration events WagerTransactionProcessed serializes the envelope 1`] = `
 {
+  "aggregateId": "tx-1",
+  "causationId": "msg-1",
+  "correlationId": "corr-1",
   "data": {
     "amount": {
       "amount": "10.00",
@@ -24,6 +27,9 @@ exports[`integration events WagerTransactionProcessed serializes the envelope 1`
 
 exports[`integration events WagerTransactionRejected serializes the envelope 1`] = `
 {
+  "aggregateId": "tx-1",
+  "causationId": "msg-1",
+  "correlationId": "corr-1",
   "data": {
     "amount": {
       "amount": "10.00",
@@ -43,6 +49,9 @@ exports[`integration events WagerTransactionRejected serializes the envelope 1`]
 
 exports[`integration events WalletBalanceChanged serializes the envelope 1`] = `
 {
+  "aggregateId": "w-1",
+  "causationId": "msg-1",
+  "correlationId": "corr-1",
   "data": {
     "balanceAfter": {
       "amount": "90.00",
@@ -64,6 +73,9 @@ exports[`integration events WalletBalanceChanged serializes the envelope 1`] = `
 
 exports[`integration events WagerTransactionPendingReference serializes the envelope 1`] = `
 {
+  "aggregateId": "tx-2",
+  "causationId": "msg-1",
+  "correlationId": "corr-1",
   "data": {
     "amount": {
       "amount": "10.00",
