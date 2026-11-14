@@ -189,7 +189,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   Custom type or mapper: `numeric` string + `currency` column <-> `Money`. Postgres returns `numeric` as string, never parse to number.
   Done when: roundtrip test for `"0.10"`, `"1234567.89"`.
 
-- [ ] **T38 Persistence models and mappers**
+- [x] **T38 Persistence models and mappers** (70f3ac1)
   ORM entities live in `infrastructure` only. Mappers convert model <-> domain via `rehydrate`. Domain classes get no decorators.
   Done when: mapper tests for wallet, transaction, ledger entry.
 
