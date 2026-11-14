@@ -1,14 +1,13 @@
 import Decimal from "decimal.js";
 import { InvalidMoneyError } from "./invalid-money.error";
 
-
 // Aqui eu crio uma cópia da classe Decimal com precisão de 40 dígitos e limites de expoente para evitar notação científica em valores monetários. Isso garante que os valores sejam representados de forma legível e consistente, especialmente quando lidamos com grandes quantias de dinheiro.
 const MoneyDecimal = Decimal.clone({ precision: 40, toExpPos: 40, toExpNeg: -40 });
 
 // Regras: Não negativo, pelo menos 1 dígito inteiro, no máximo 2 casas decimais. Qualquer outra coisa (NaN, Infinity, "1e3", "", "-1", "1.234") nunca chega ao Decimal.
-const AMOUNT_PATTERN      = /^\d+(\.\d{1,2})?$/;
-const CURRENCY_PATTERN    =   /^[A-Z]{3}$/;
-const SCALE               = 2;
+const AMOUNT_PATTERN = /^\d+(\.\d{1,2})?$/;
+const CURRENCY_PATTERN = /^[A-Z]{3}$/;
+const SCALE = 2;
 
 export interface MoneyJSON {
   amount: string;
@@ -16,7 +15,6 @@ export interface MoneyJSON {
 }
 
 export class Money {
-
   private constructor(
     private readonly value: Decimal,
     readonly currency: string,
@@ -25,7 +23,6 @@ export class Money {
   }
 
   static from(input: { amount: unknown; currency: unknown }): Money {
-    
     const currency = Money.parseCurrency(input.currency);
     if (typeof input.amount !== "string") throw new InvalidMoneyError("amount must be a string");
 
