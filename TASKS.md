@@ -185,7 +185,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   Test: empty DB -> up -> down -> up works.
   Done when: test is green in integration suite.
 
-- [ ] **T37 Money persistence mapping**
+- [x] **T37 Money persistence mapping** (41f7fb9)
   Custom type or mapper: `numeric` string + `currency` column <-> `Money`. Postgres returns `numeric` as string, never parse to number.
   Done when: roundtrip test for `"0.10"`, `"1234567.89"`.
 
