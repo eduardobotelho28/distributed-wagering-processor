@@ -137,7 +137,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   Pure function: canonical JSON (recursively sorted keys, no whitespace) of business fields only (`providerId, externalTransactionId, playerId, walletId, roundId, gameId, kind, money`), sha256 hex. Header and transport metadata excluded. Document the algorithm in a comment.
   Done when: key order does not change the hash; changing amount changes it; extra transport fields do not.
 
-- [ ] **T26 [CORE] Reversal policy**
+- [x] **T26 [CORE] Reversal policy**
   Pure domain function that validates a reversal against its reference: allowed kinds (REFUND -> BET only; ROLLBACK -> BET, WIN, REFUND), reference is `PROCESSED`, same provider, player, wallet, currency, round, equal amount. Returns a `FailureCode` or ok.
   Done when: one test per failure code.
 
