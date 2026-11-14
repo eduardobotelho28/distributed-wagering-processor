@@ -197,7 +197,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   Integration helpers: fresh schema per suite, factories, and `assertLedgerInvariant(walletId)`: wallet balance == sum of credits - debits, each entry balanced, entries chain correctly. Reused by every later test.
   Done when: helper has its own test.
 
-- [ ] **T40 [CORE] WalletRepository**
+- [x] **T40 [CORE] WalletRepository** (470ada8)
   `findByIdForUpdate` (PESSIMISTIC_WRITE), `findById`, `findByPlayerAndCurrency`, `insert`, `saveBalance` (updates balance, version, updated_at).
   Done when: integration test proves a second transaction blocks on the lock.
 
