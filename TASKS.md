@@ -225,7 +225,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
 
 ## Phase 3: Use cases (application layer)
 
-- [ ] **T46 Ports and result types**
+- [x] **T46 Ports and result types** (19fea78)
   `SubmitResult` (processed | rejected | pendingReference, plus `idempotentReplay`), clock port, id generator port (UUID v7), event context.
   Done when: types compile; no infra imports.
 
