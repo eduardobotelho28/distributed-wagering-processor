@@ -67,7 +67,8 @@ export class Money {
     return this.value.lessThan(0);
   }
 
-  // DECISION: comparar moedas diferentes lança erro em vez de retornar false; comparar BRL com USD é bug de quem chama.
+  // Aqui eu decidi que comparar moedas diferentes lança erro em vez de retornar false; 
+  // comparar BRL com USD é bug de quem chama.
   isLessThan(other: Money): boolean {
     this.assertSameCurrency(other);
     return this.value.lessThan(other.value);
