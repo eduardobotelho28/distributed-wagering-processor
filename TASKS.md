@@ -351,7 +351,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   On SIGTERM: stop polling, finish in-flight messages, return visibility of unstarted ones, close connections.
   Done when: test sends SIGTERM mid-processing, no lost or duplicated effect.
 
-- [ ] **T76 Consumer integration tests**
+- [x] **T76 Consumer integration tests** (3e2addf)
   Redelivery, crash before ack (kill after commit), DLQ, FIFO group = walletId.
   Done when: all pass with real Postgres and LocalStack.
 
