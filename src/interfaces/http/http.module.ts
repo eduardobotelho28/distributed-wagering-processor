@@ -1,0 +1,82 @@
+import { MikroORM } from "@mikro-orm/postgresql";
+import { Module, type Provider } from "@nestjs/common";
+import { CreateWalletUseCase } from "../../application/create-wallet/create-wallet.use-case";
+import type { Clock } from "../../application/ports/clock";
+import type { IdGenerator } from "../../application/ports/id-generator";
+import type { Logger } from "../../application/ports/logger";
+import type { Metrics } from "../../application/ports/metrics";
+import type { UnitOfWork } from "../../application/ports/unit-of-work";
+import { GetLedgerUseCase } from "../../application/queries/get-ledger.use-case";
+import { GetTransactionByIdUseCase } from "../../application/queries/get-transaction-by-id.use-case";
+import { GetTransactionByProviderExternalIdUseCase } from "../../application/queries/get-transaction-by-provider-external-id.use-case";
+import { GetWalletUseCase } from "../../application/queries/get-wallet.use-case";
+import { ReconcileWalletUseCase } from "../../application/reconcile-wallet/reconcile-wallet.use-case";
+import { SubmitWagerTransactionUseCase } from "../../application/submit-wager-transaction/submit-wager-transaction.use-case";
+import { InMemoryMetrics } from "../../infrastructure/observability/in-memory-metrics";
+import { JsonConsoleLogger } from "../../infrastructure/observability/json-console-logger";
+import { MikroOrmUnitOfWork } from "../../infrastructure/persistence/mikro-orm-unit-of-work";
+import { SystemClock } from "../../infrastructure/time/system-clock";
+import { UuidV7IdGenerator } from "../../infrastructure/time/uuid-v7-id-generator";
+import { TransactionsController } from "./controllers/transactions.controller";
+import { WalletsController } from "./controllers/wallets.controller";
+import * as tokens from "./tokens";
+
+const infrastructure: Provider[] = [
+  {
+    provide: tokens.UNIT_OF_WORK,
+    useFactory: (orm: MikroORM) => new MikroOrmUnitOfWork(orm),
+    inject: [MikroORM],
+  },
+  { provide: tokens.CLOCK, useValue: new SystemClock() },
+  { provide: tokens.ID_GENERATOR, useValue: new UuidV7IdGenerator() },
+  { provide: tokens.LOGGER, useValue: new JsonConsoleLogger() },
+  { provide: tokens.METRICS, useValue: new InMemoryMetrics() },
+];
+
+const core = [tokens.UNIT_OF_WORK, tokens.CLOCK, tokens.ID_GENERATOR];
+
+// DECISION: casos de uso são classes puras da application; o Nest só os instancia aqui.
+const useCases: Provider[] = [
+  {
+    provide: tokens.CREATE_WALLET,
+    useFactory: (u: UnitOfWork, c: Clock, i: IdGenerator) => new CreateWalletUseCase(u, c, i),
+    inject: core,
+  },
+  {
+    provide: tokens.SUBMIT_TRANSACTION,
+    useFactory: (u: UnitOfWork, c: Clock, i: IdGenerator) =>
+      new SubmitWagerTransactionUseCase(u, c, i),
+    inject: core,
+  },
+  {
+    provide: tokens.GET_WALLET,
+    useFactory: (u: UnitOfWork) => new GetWalletUseCase(u),
+    inject: [tokens.UNIT_OF_WORK],
+  },
+  {
+    provide: tokens.GET_LEDGER,
+    useFactory: (u: UnitOfWork) => new GetLedgerUseCase(u),
+    inject: [tokens.UNIT_OF_WORK],
+  },
+  {
+    provide: tokens.GET_TRANSACTION_BY_ID,
+    useFactory: (u: UnitOfWork) => new GetTransactionByIdUseCase(u),
+    inject: [tokens.UNIT_OF_WORK],
+  },
+  {
+    provide: tokens.GET_TRANSACTION_BY_EXTERNAL_ID,
+    useFactory: (u: UnitOfWork) => new GetTransactionByProviderExternalIdUseCase(u),
+    inject: [tokens.UNIT_OF_WORK],
+  },
+  {
+    provide: tokens.RECONCILE_WALLET,
+    useFactory: (u: UnitOfWork, l: Logger, m: Metrics) => new ReconcileWalletUseCase(u, l, m),
+    inject: [tokens.UNIT_OF_WORK, tokens.LOGGER, tokens.METRICS],
+  },
+];
+
+@Module({
+  controllers: [WalletsController, TransactionsController],
+  providers: [...infrastructure, ...useCases],
+})
+export class HttpModule {}

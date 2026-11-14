@@ -14,9 +14,8 @@ export type GetLedgerResult =
   | { outcome: "invalidCursor" }
   | { outcome: "invalidLimit"; max: number };
 
-// DECISION: limite máximo de 100 por página; protege o banco de varreduras grandes e o
-// padrão de 50 do README cabe com folga.
-export const LEDGER_PAGE_MAX_LIMIT = 100;
+// DECISION: limite máximo de 200 por página (T66); protege o banco de varreduras grandes.
+export const LEDGER_PAGE_MAX_LIMIT = 200;
 
 export class GetLedgerUseCase {
   constructor(private readonly unitOfWork: UnitOfWork) {}
