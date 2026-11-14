@@ -113,7 +113,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   Immutable. `create` validates `balanceBefore ± money === balanceAfter` and direction; `rehydrate`; `isBalanced()`. No setters, no transition methods.
   Done when: unbalanced creation throws; tests cover DEBIT and CREDIT.
 
-- [ ] **T20 [CORE] Wallet: open and rehydrate**
+- [x] **T20 [CORE] Wallet: open and rehydrate** (c2ca8d5)
   `Wallet.open` (version 1, currency from initial balance), `rehydrate`, getters. Negative initial balance rejected.
   Done when: tests cover creation and rehydrate (no revalidation of transitions).
 
