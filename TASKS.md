@@ -395,7 +395,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
 
 ## Phase 8: Concurrency and failure tests (real parallelism)
 
-- [ ] **T84 Multi-instance harness**
+- [x] **T84 Multi-instance harness** (ff16823)
   Helper to start N app processes (separate Bun processes or compose scale) against the same Postgres/LocalStack, wait for ready, stop them.
   Done when: harness boots 3 instances.
 
