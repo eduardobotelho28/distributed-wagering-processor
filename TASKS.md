@@ -53,7 +53,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   Init script (mounted in LocalStack `ready.d`) creating `wager-transactions.fifo`, `wager-transactions-dlq.fifo` (redrive policy, `maxReceiveCount` = 5) and a standard `wager-events` queue for outbox publishing.
   Done when: `awslocal sqs list-queues` shows all three after `compose up`.
 
-- [ ] **T06 NestJS scaffold under Bun**
+- [x] **T06 NestJS scaffold under Bun** (e494092, 1476d01)
   Minimal Nest app in `src/`, `app` service in compose with hot reload (`bun --watch`), `.env.example`.
   Done when: `docker compose up app` serves the Nest app; no default hello-world controller left.
 
