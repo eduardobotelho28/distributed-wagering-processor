@@ -269,7 +269,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   If the insert hits the UNIQUE constraint (same key sent with different wallets in parallel), catch the violation, reload by key, and resolve as replay or conflict.
   Done when: integration test with parallel requests, same key, two wallets.
 
-- [ ] **T57 Use case unit test sweep**
+- [x] **T57 Use case unit test sweep** (18a63b3)
   Fill gaps: currency conflict, `OPENING` from outside rejected, payload validation at the use case boundary, FAILED path for permanent infra error.
   Done when: every `FailureCode` is produced by at least one test.
 
