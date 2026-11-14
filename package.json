@@ -4,9 +4,18 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "start": "bun src/main.ts",
+    "start:dev": "bun --watch src/main.ts",
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "test:unit": "bun test test/unit test/lint",
+    "test:integration": "bun test test/integration",
+    "test:concurrency": "bun test test/concurrency",
+    "migration:create": "echo \"migration:create: not available until MikroORM setup (T30)\" >&2 && exit 1",
+    "migration:up": "echo \"migration:up: not available until MikroORM setup (T30)\" >&2 && exit 1",
+    "migration:down": "echo \"migration:down: not available until MikroORM setup (T30)\" >&2 && exit 1"
   },
   "dependencies": {
     "@nestjs/common": "^11",
