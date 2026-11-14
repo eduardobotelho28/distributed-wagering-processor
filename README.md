@@ -34,3 +34,24 @@ docker compose run --rm app bun run test:unit
 ```
 
 `docker compose run app` waits for `postgres` and `localstack` to be healthy, so integration and concurrency suites can reach them by service name.
+
+## Integration event envelope
+
+Every event published from the outbox to `wager-events` uses this envelope. Money is always `{ amount: decimal string, currency }`. Consumers dedupe by `eventId`.
+
+```json
+{
+  "eventId": "uuid",
+  "eventType": "WalletBalanceChanged",
+  "eventVersion": 1,
+  "occurredAt": "2026-01-01T00:00:00.000Z",
+  "data": {
+    "walletId": "uuid",
+    "transactionId": "uuid",
+    "balanceBefore": { "amount": "100.00", "currency": "BRL" },
+    "balanceAfter": { "amount": "90.00", "currency": "BRL" }
+  }
+}
+```
+
+Event types: `WagerTransactionProcessed`, `WagerTransactionRejected`, `WalletBalanceChanged`, `WagerTransactionPendingReference`.

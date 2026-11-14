@@ -149,7 +149,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   `enqueue(event)`, `isPending`, `isDue(now)`, `markPublished`, `scheduleRetry(now)` with exponential backoff (base and cap as constants, documented with a DECISION comment).
   Done when: tests cover the backoff sequence and the cap.
 
-- [ ] **T29 IntegrationEvent and concrete events**
+- [x] **T29 IntegrationEvent and concrete events** (b00e81c)
   Abstract base + `WagerTransactionProcessed`, `WagerTransactionRejected`, `WalletBalanceChanged`, `WagerTransactionPendingReference`. `data` carries `MoneyProps` strings, never `Money`. `toJSON` matches the README envelope.
   Done when: snapshot test of each `toJSON()`.
 

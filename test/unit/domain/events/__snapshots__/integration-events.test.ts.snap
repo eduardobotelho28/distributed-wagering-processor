@@ -1,0 +1,82 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`integration events WagerTransactionProcessed serializes the envelope 1`] = `
+{
+  "data": {
+    "amount": {
+      "amount": "10.00",
+      "currency": "BRL",
+    },
+    "kind": "BET",
+    "resultingBalance": {
+      "amount": "90.50",
+      "currency": "BRL",
+    },
+    "transactionId": "tx-1",
+    "walletId": "w-1",
+  },
+  "eventId": "evt-1",
+  "eventType": "WagerTransactionProcessed",
+  "eventVersion": 1,
+  "occurredAt": "2026-01-01T00:00:00.000Z",
+}
+`;
+
+exports[`integration events WagerTransactionRejected serializes the envelope 1`] = `
+{
+  "data": {
+    "amount": {
+      "amount": "10.00",
+      "currency": "BRL",
+    },
+    "failureCode": "INSUFFICIENT_FUNDS",
+    "kind": "BET",
+    "transactionId": "tx-1",
+    "walletId": "w-1",
+  },
+  "eventId": "evt-1",
+  "eventType": "WagerTransactionRejected",
+  "eventVersion": 1,
+  "occurredAt": "2026-01-01T00:00:00.000Z",
+}
+`;
+
+exports[`integration events WalletBalanceChanged serializes the envelope 1`] = `
+{
+  "data": {
+    "balanceAfter": {
+      "amount": "90.00",
+      "currency": "BRL",
+    },
+    "balanceBefore": {
+      "amount": "100.00",
+      "currency": "BRL",
+    },
+    "transactionId": "tx-1",
+    "walletId": "w-1",
+  },
+  "eventId": "evt-1",
+  "eventType": "WalletBalanceChanged",
+  "eventVersion": 1,
+  "occurredAt": "2026-01-01T00:00:00.000Z",
+}
+`;
+
+exports[`integration events WagerTransactionPendingReference serializes the envelope 1`] = `
+{
+  "data": {
+    "amount": {
+      "amount": "10.00",
+      "currency": "BRL",
+    },
+    "kind": "REFUND",
+    "referenceExternalTransactionId": "ext-1",
+    "transactionId": "tx-2",
+    "walletId": "w-1",
+  },
+  "eventId": "evt-1",
+  "eventType": "WagerTransactionPendingReference",
+  "eventVersion": 1,
+  "occurredAt": "2026-01-01T00:00:00.000Z",
+}
+`;
