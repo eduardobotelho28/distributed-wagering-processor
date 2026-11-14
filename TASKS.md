@@ -428,7 +428,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   Two ROLLBACKs (and REFUND + ROLLBACK) of the same BET in parallel -> exactly one PROCESSED.
   Done when: green.
 
-- [ ] **T93 Restart consistency**
+- [x] **T93 Restart consistency** (cf8da59)
   Stop all instances mid-load, restart, wait for drain, run `assertLedgerInvariant` on every wallet.
   Done when: `wallet.balance == ledger-derived balance` for all wallets.
 
