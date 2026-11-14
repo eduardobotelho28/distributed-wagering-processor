@@ -261,7 +261,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   Persist as `PENDING_REFERENCE` with `next_attempt_at`, emit `WagerTransactionPendingReference`, return pending result.
   Done when: test covers the persisted state and the event.
 
-- [ ] **T55 [CORE] Outbox events inside the same transaction**
+- [x] **T55 [CORE] Outbox events inside the same transaction** (da791b1)
   Emit `WagerTransactionProcessed` (including LOSS), `WagerTransactionRejected`, `WalletBalanceChanged` (only when balance changes), `WagerTransactionPendingReference`. `correlationId` and `causationId` propagated.
   Done when: tests assert which events exist per kind.
 
