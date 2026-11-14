@@ -233,7 +233,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   Creates wallet; if initial balance > 0, creates internal `OPENING` transaction (PROCESSED) and CREDIT ledger entry in the SAME transaction. Duplicate `(playerId, currency)` -> conflict result.
   Done when: unit test with fakes plus integration test with real DB.
 
-- [ ] **T48 Query use cases**
+- [x] **T48 Query use cases** (c4ec272)
   `GetWallet`, `GetLedger`, `GetTransactionById`, `GetTransactionByProviderExternalId`.
   Done when: unit tests.
 
