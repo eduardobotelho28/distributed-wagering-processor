@@ -18,6 +18,10 @@
     "migration:down": "echo \"migration:down: not available until MikroORM setup (T30)\" >&2 && exit 1"
   },
   "dependencies": {
+    "@mikro-orm/core": "^7.2.9",
+    "@mikro-orm/migrations": "^7.2.9",
+    "@mikro-orm/nestjs": "^7.1.0",
+    "@mikro-orm/postgresql": "^7.2.9",
     "@nestjs/common": "^11",
     "@nestjs/core": "^11",
     "@nestjs/platform-express": "^11",
