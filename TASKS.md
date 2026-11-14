@@ -432,7 +432,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   Stop all instances mid-load, restart, wait for drain, run `assertLedgerInvariant` on every wallet.
   Done when: `wallet.balance == ledger-derived balance` for all wallets.
 
-- [ ] **T94 Postgres/SQS outage tests**
+- [x] **T94 Postgres/SQS outage tests** (d71e5d4)
   Pause Postgres container during processing; transient errors retried, nothing lost. Same for LocalStack during publishing.
   Done when: green.
 
