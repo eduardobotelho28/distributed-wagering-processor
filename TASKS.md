@@ -304,15 +304,15 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   Calls `SubmitWagerTransaction`. Returns README body; 200/201 processed, 202 pending, 422 rejected, 409 conflict.
   Done when: e2e tests for each status.
 
-- [ ] **T65 GET transaction endpoints**
+- [x] **T65 GET transaction endpoints** (d6f1019, b34ee97)
   By id and by `providerId + externalTransactionId`.
   Done when: e2e tests.
 
-- [ ] **T66 GET /wallets/:walletId/ledger**
+- [x] **T66 GET /wallets/:walletId/ledger** (d6f1019, 80c61cc)
   Opaque cursor, `limit` default 50, max 200. Invalid cursor -> 400.
   Done when: e2e pagination test.
 
-- [ ] **T67 POST /wallets/:walletId/reconciliation**
+- [x] **T67 POST /wallets/:walletId/reconciliation** (d6f1019, 9287ba2)
   Done when: e2e for consistent and corrupted cases.
 
 - [ ] **T68 Health**
