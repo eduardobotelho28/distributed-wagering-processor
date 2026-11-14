@@ -209,7 +209,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   `insert`, `listByWallet(cursor, limit)` (opaque cursor = base64 of `(created_at, id)`), `sumByWallet`.
   Done when: pagination test with 120 entries, no duplicates or gaps.
 
-- [ ] **T43 Inbox and Outbox repositories**
+- [x] **T43 Inbox and Outbox repositories** (4e4e8bf)
   Inbox: `tryInsert` (`ON CONFLICT DO NOTHING`, returns whether it was new), `markProcessed`. Outbox: `insert`, `lockDueBatchSkipLocked(limit, now)`, `markPublished`, `scheduleRetry`.
   Done when: integration tests, including two concurrent `lockDueBatch` calls returning disjoint rows.
 
