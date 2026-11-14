@@ -1,7 +1,7 @@
 import { Controller, Get, HttpCode, Inject, Res } from "@nestjs/common";
 import type { HealthCheck, HealthStatus } from "../../../application/ports/health-check";
 import { HttpStatus } from "../errors/http-status-table";
-import { HEALTH_CHECKS } from "../tokens";
+import { HEALTH_CHECKS } from "../../tokens";
 import { Public } from "../auth/public.decorator";
 
 interface StatusResponse {

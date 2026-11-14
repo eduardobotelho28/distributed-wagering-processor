@@ -6,7 +6,7 @@ import type {
 } from "../../../application/ports/provider-identity";
 import { ApiError } from "../errors/api-error";
 import { HttpStatus } from "../errors/http-status-table";
-import { PROVIDER_IDENTITY } from "../tokens";
+import { PROVIDER_IDENTITY } from "../../tokens";
 import { IS_PUBLIC } from "./public.decorator";
 
 interface RequestWithHeaders {

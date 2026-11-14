@@ -9,6 +9,7 @@ export interface AppConfig {
     readonly eventsQueue: string;
   };
   readonly workers: {
+    readonly sqsConsumerEnabled: boolean;
     readonly outboxPublishIntervalMs: number;
     readonly pendingReferenceIntervalMs: number;
   };
@@ -69,6 +70,15 @@ class EnvironmentReader {
     return value;
   }
 
+  boolean(name: string, fallback: boolean): boolean {
+    const raw = this.env[name]?.trim().toLowerCase();
+    if (!raw) return fallback;
+    if (raw === "true") return true;
+    if (raw === "false") return false;
+    this.problems.push(`${name} must be true or false`);
+    return fallback;
+  }
+
   assertValid(): void {
     if (this.problems.length > 0) {
       throw new ConfigValidationError(this.problems);
@@ -91,6 +101,8 @@ export function loadConfig(env: Environment): AppConfig {
       eventsQueue: read.requiredString("SQS_EVENTS_QUEUE"),
     },
     workers: {
+      // DECISION: ligado por padrão; os testes e2e HTTP desligam para não disputar a fila real.
+      sqsConsumerEnabled: read.boolean("SQS_CONSUMER_ENABLED", true),
       outboxPublishIntervalMs: read.positiveInteger("OUTBOX_PUBLISH_INTERVAL_MS", 1000),
       pendingReferenceIntervalMs: read.positiveInteger("PENDING_REFERENCE_INTERVAL_MS", 5000),
     },

@@ -11,7 +11,7 @@ import {
   submitResultToHttp,
   type TransactionReplyBody,
 } from "../mappers/submit-result.mapper";
-import * as tokens from "../tokens";
+import * as tokens from "../../tokens";
 import { readCorrelationId, readPathUuid } from "../validation/path-and-query";
 import { readText } from "../../validation/field-readers";
 import { parseSubmitTransactionRequest } from "../validation/submit-transaction.request";

@@ -20,27 +20,13 @@ import { APP_CONFIG } from "../../infrastructure/config/app-config.module";
 import { DatabaseHealthCheck } from "../../infrastructure/health/database-health-check";
 import { SqsHealthCheck } from "../../infrastructure/health/sqs-health-check";
 import { createSqsClient } from "../../infrastructure/messaging/sqs-client";
-import { InMemoryMetrics } from "../../infrastructure/observability/in-memory-metrics";
-import { JsonConsoleLogger } from "../../infrastructure/observability/json-console-logger";
-import { MikroOrmUnitOfWork } from "../../infrastructure/persistence/mikro-orm-unit-of-work";
-import { SystemClock } from "../../infrastructure/time/system-clock";
-import { UuidV7IdGenerator } from "../../infrastructure/time/uuid-v7-id-generator";
 import { TransactionsController } from "./controllers/transactions.controller";
 import { WalletsController } from "./controllers/wallets.controller";
 import { AuthGuard } from "./auth/auth.guard";
 import { HealthController } from "./health/health.controller";
-import * as tokens from "./tokens";
+import * as tokens from "../tokens";
 
 const infrastructure: Provider[] = [
-  {
-    provide: tokens.UNIT_OF_WORK,
-    useFactory: (orm: MikroORM) => new MikroOrmUnitOfWork(orm),
-    inject: [MikroORM],
-  },
-  { provide: tokens.CLOCK, useValue: new SystemClock() },
-  { provide: tokens.ID_GENERATOR, useValue: new UuidV7IdGenerator() },
-  { provide: tokens.LOGGER, useValue: new JsonConsoleLogger() },
-  { provide: tokens.METRICS, useValue: new InMemoryMetrics() },
   {
     provide: tokens.HEALTH_CHECKS,
     useFactory: (orm: MikroORM, config: AppConfig): HealthCheck[] => [

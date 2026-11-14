@@ -27,7 +27,12 @@ export interface RequestOptions {
 // Sobe o mesmo AppModule e configureHttpApp da produção, contra um banco descartável.
 export async function startHttpApp(): Promise<HttpTestApp> {
   const db = await createTestDatabase();
-  const config = { ...loadConfig(process.env), database: { url: db.url } };
+  const base = loadConfig(process.env);
+  const config = {
+    ...base,
+    database: { url: db.url },
+    workers: { ...base.workers, sqsConsumerEnabled: false },
+  };
   const app: INestApplication = await NestFactory.create(AppModule.register(config), {
     logger: false,
   });
