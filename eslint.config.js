@@ -25,6 +25,51 @@ const floatMoneyBans = {
   ],
 };
 
+// Aqui configurei para que o LINT valide as fronteiras entre os módulos, para evitar que alguém importe algo de outro módulo que não deveria. Por exemplo, o domínio não pode importar nada da infraestrutura ou das interfaces, e a aplicação não pode importar nada da infraestrutura ou das interfaces também. Isso ajuda a manter a arquitetura limpa e respeitar as camadas do sistema.
+
+const outerLayerSegment = "(^|/)(application|infrastructure|interfaces)(/|$)";
+const srcRootModule = "(^|/)(app\\.module|main)(\\.ts)?$";
+
+const domainBoundaries = {
+  "no-restricted-imports": [
+    "error",
+    {
+      patterns: [
+        {
+          group: ["@nestjs/*", "@mikro-orm/*"],
+          message: "domain is pure TS: no framework or ORM imports.",
+        },
+        {
+          regex: outerLayerSegment,
+          message: "domain cannot import from outside domain.",
+        },
+        {
+          regex: srcRootModule,
+          message: "domain cannot import from outside domain.",
+        },
+      ],
+    },
+  ],
+};
+
+const applicationBoundaries = {
+  "no-restricted-imports": [
+    "error",
+    {
+      patterns: [
+        {
+          regex: "(^|/)(infrastructure|interfaces)(/|$)",
+          message: "application depends on ports, not on infrastructure or interfaces.",
+        },
+        {
+          regex: srcRootModule,
+          message: "application cannot import the composition root.",
+        },
+      ],
+    },
+  ],
+};
+
 export default tseslint.config(
   { ignores: ["node_modules/**", "dist/**", "coverage/**"] },
   ...tseslint.configs.recommended,
@@ -37,5 +82,13 @@ export default tseslint.config(
   {
     files: ["src/**/*.ts"],
     rules: floatMoneyBans,
+  },
+  {
+    files: ["src/domain/**/*.ts"],
+    rules: domainBoundaries,
+  },
+  {
+    files: ["src/application/**/*.ts"],
+    rules: applicationBoundaries,
   },
 );

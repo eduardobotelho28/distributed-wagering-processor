@@ -77,7 +77,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   GitHub Actions: install, lint, typecheck, unit tests.
   Done when: workflow green on a PR.
 
-- [ ] **T12 Folder skeleton and boundaries**
+- [x] **T12 Folder skeleton and boundaries** (8f81fcf, 99652bb)
   Create `src/domain`, `src/application`, `src/infrastructure`, `src/interfaces`. ESLint rule: `domain` cannot import `@nestjs/*`, `@mikro-orm/*`, or anything outside `domain`; `application` cannot import `infrastructure` or `interfaces`.
   Done when: a deliberate bad import fails lint.
 
