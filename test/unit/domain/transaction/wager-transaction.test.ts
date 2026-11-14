@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { FailureCode } from "../../../../src/domain/errors/failure-code";
 import { InvariantViolationError } from "../../../../src/domain/errors/invariant-violation.error";
 import { Money } from "../../../../src/domain/money/money";
 import { ReferenceRequiredError } from "../../../../src/domain/transaction/reference-required.error";
@@ -53,6 +54,9 @@ describe("WagerTransaction.create", () => {
       expect(tx.requiresReference()).toBe(requiresReference);
       expect(tx.affectsBalance()).toBe(affectsBalance);
       expect(tx.referenceExternalTransactionId).toBe(reference);
+      expect(tx.referenceTransactionId).toBeNull();
+      expect(tx.failureCode).toBeNull();
+      expect(tx.processedAt).toBeNull();
     });
   }
 
@@ -92,8 +96,23 @@ describe("WagerTransaction.rehydrate", () => {
     const tx = WagerTransaction.rehydrate({
       ...input({ kind: TransactionKind.ROLLBACK }),
       status: TransactionStatus.PROCESSED,
+      referenceTransactionId: null,
+      failureCode: null,
+      processedAt: new Date("2026-01-01T00:00:01Z"),
     });
     expect(tx.status).toBe(TransactionStatus.PROCESSED);
     expect(tx.referenceExternalTransactionId).toBeNull();
+    expect(tx.processedAt?.toISOString()).toBe("2026-01-01T00:00:01.000Z");
+  });
+
+  test("restores a rejection with its failure code", () => {
+    const tx = WagerTransaction.rehydrate({
+      ...input(),
+      status: TransactionStatus.REJECTED,
+      referenceTransactionId: null,
+      failureCode: FailureCode.INSUFFICIENT_FUNDS,
+      processedAt: null,
+    });
+    expect(tx.failureCode).toBe(FailureCode.INSUFFICIENT_FUNDS);
   });
 });

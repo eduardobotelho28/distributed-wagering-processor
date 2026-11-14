@@ -1,4 +1,5 @@
 import { InvariantViolationError } from "../errors/invariant-violation.error";
+import type { FailureCode } from "../errors/failure-code";
 import type { Money } from "../money/money";
 import { ReferenceRequiredError } from "./reference-required.error";
 import { TransactionKind } from "./transaction-kind";
@@ -18,14 +19,21 @@ export interface WagerTransactionProps {
   referenceExternalTransactionId: string | null;
   payloadHash: string;
   status: TransactionStatus;
+  // DECISION: id interno da referência, preenchido só quando ela é resolvida (markProcessed).
+  // O payload carrega apenas o id externo do provedor.
+  referenceTransactionId: string | null;
+  failureCode: FailureCode | null;
+  processedAt: Date | null;
   createdAt: Date;
 }
 
-export type CreateWagerTransactionInput = Omit<WagerTransactionProps, "status">;
+type LifecycleField = "status" | "referenceTransactionId" | "failureCode" | "processedAt";
+
+export type CreateWagerTransactionInput = Omit<WagerTransactionProps, LifecycleField>;
 
 export type OpenWagerTransactionInput = Omit<
   WagerTransactionProps,
-  "status" | "kind" | "referenceExternalTransactionId"
+  LifecycleField | "kind" | "referenceExternalTransactionId"
 >;
 
 const KINDS_REQUIRING_REFERENCE: ReadonlySet<TransactionKind> = new Set([
@@ -60,13 +68,20 @@ export class WagerTransaction {
 
   // DECISION: rehydrate não revalida; dados vindos do banco já passaram por create.
   static rehydrate(props: WagerTransactionProps): WagerTransaction {
-    return new WagerTransaction({ ...props, createdAt: new Date(props.createdAt) });
+    return new WagerTransaction({
+      ...props,
+      processedAt: props.processedAt === null ? null : new Date(props.processedAt),
+      createdAt: new Date(props.createdAt),
+    });
   }
 
   private static born(input: CreateWagerTransactionInput): WagerTransaction {
     return new WagerTransaction({
       ...input,
       status: TransactionStatus.PENDING,
+      referenceTransactionId: null,
+      failureCode: null,
+      processedAt: null,
       createdAt: new Date(input.createdAt),
     });
   }
@@ -130,6 +145,18 @@ export class WagerTransaction {
 
   get status(): TransactionStatus {
     return this.props.status;
+  }
+
+  get referenceTransactionId(): string | null {
+    return this.props.referenceTransactionId;
+  }
+
+  get failureCode(): FailureCode | null {
+    return this.props.failureCode;
+  }
+
+  get processedAt(): Date | null {
+    return this.props.processedAt === null ? null : new Date(this.props.processedAt);
   }
 
   get createdAt(): Date {
