@@ -61,7 +61,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   `tsconfig.json` with `strict`, `noUncheckedIndexedAccess`, `noImplicitOverride`, `noFallthroughCasesInSwitch`.
   Done when: `bun run typecheck` passes on the scaffold.
 
-- [ ] **T08 Lint and format**
+- [x] **T08 Lint and format** (dbbf084, 7055933)
   ESLint (typescript-eslint) + Prettier. Rules: `no-explicit-any`, `no-non-null-assertion`, `no-restricted-globals`/syntax for `parseFloat`, `Number(`, `.toFixed(` inside `src/**`.
   Done when: `bun run lint` passes; adding `parseFloat("1")` makes it fail.
 
