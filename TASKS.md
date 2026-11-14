@@ -359,7 +359,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
 
 ## Phase 6: Outbox publisher and workers
 
-- [ ] **T77 [CORE] Outbox publisher**
+- [x] **T77 [CORE] Outbox publisher** (9e2320d)
   Loop: in a transaction `lockDueBatchSkipLocked`, publish to `wager-events`, `markPublished`. Failure -> `scheduleRetry`. Publishing is at-least-once; consumers dedupe by `eventId`. Add `// DECISION:` on at-least-once.
   Done when: unit test with fake queue plus integration test.
 
