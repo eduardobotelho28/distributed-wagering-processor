@@ -173,7 +173,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   Columns per README. `UNIQUE(wallet_id, transaction_id)`, CHECKs (`balance_after = balance_before +/- amount` by direction, amount > 0, balance_after >= 0). Trigger that raises on `UPDATE` and `DELETE`. Index `(wallet_id, created_at, id)` for cursor pagination.
   Done when: an UPDATE and a DELETE both fail in a test.
 
-- [ ] **T34 Migration: inbox and outbox**
+- [x] **T34 Migration: inbox and outbox** (5c0af65)
   `inbox_messages` PK `(consumer_name, message_id)`. `outbox_messages` with `attempts`, `next_attempt_at`, `published_at`, partial index on unpublished rows.
   Done when: up and down both run.
 
