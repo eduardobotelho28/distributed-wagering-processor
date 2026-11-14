@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # FIFO para wager transactions para que mensagens para a mesma wallet (MessageGroupId) sejam entregues na ordem; a DLQ de uma fila FIFO também deve ser FIFO.
-# Ponto de Atenação: deduplicação baseada em conteúdo está desativada; os produtores devem enviar MessageDeduplicationId. Logo, a DB (UNIQUE idempotency_key) continua sendo a verdadeira garantia de deduplicação, não o SQS.
+# Ponto de Atenção: deduplicação baseada em conteúdo está desativada; os produtores devem enviar MessageDeduplicationId. Logo, a DB (UNIQUE idempotency_key) continua sendo a verdadeira garantia de deduplicação, não o SQS.
 
 DLQ_NAME="wager-transactions-dlq.fifo"
 MAIN_NAME="wager-transactions.fifo"
