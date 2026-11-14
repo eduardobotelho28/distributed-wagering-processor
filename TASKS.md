@@ -49,7 +49,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   Add `localstack/localstack` with `SERVICES=sqs` and a healthcheck.
   Done when: `docker compose up -d localstack` is healthy.
 
-- [ ] **T05 Queue bootstrap script**
+- [x] **T05 Queue bootstrap script** (fc969d4)
   Init script (mounted in LocalStack `ready.d`) creating `wager-transactions.fifo`, `wager-transactions-dlq.fifo` (redrive policy, `maxReceiveCount` = 5) and a standard `wager-events` queue for outbox publishing.
   Done when: `awslocal sqs list-queues` shows all three after `compose up`.
 
