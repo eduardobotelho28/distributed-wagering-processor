@@ -293,26 +293,26 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   Validate at the edge (ask before adding a lib; prefer what Nest already offers). Invalid payload -> 400 with `code`. `Idempotency-Key` header required.
   Done when: tests for missing header, invalid money, unknown kind, `OPENING`.
 
-- [ ] **T62 POST /wallets**
+- [x] **T62 POST /wallets** (d6f1019, c43be27)
   201 with README body; duplicate -> 409.
   Done when: e2e test against real DB.
 
-- [ ] **T63 GET /wallets/:walletId**
+- [x] **T63 GET /wallets/:walletId** (d6f1019, c43be27)
   Done when: e2e test, 404 for unknown id.
 
-- [ ] **T64 POST /wagering/transactions**
+- [x] **T64 POST /wagering/transactions** (d6f1019, 01967c8)
   Calls `SubmitWagerTransaction`. Returns README body; 200/201 processed, 202 pending, 422 rejected, 409 conflict.
   Done when: e2e tests for each status.
 
-- [ ] **T65 GET transaction endpoints**
+- [x] **T65 GET transaction endpoints** (d6f1019, b34ee97)
   By id and by `providerId + externalTransactionId`.
   Done when: e2e tests.
 
-- [ ] **T66 GET /wallets/:walletId/ledger**
+- [x] **T66 GET /wallets/:walletId/ledger** (d6f1019, 80c61cc)
   Opaque cursor, `limit` default 50, max 200. Invalid cursor -> 400.
   Done when: e2e pagination test.
 
-- [ ] **T67 POST /wallets/:walletId/reconciliation**
+- [x] **T67 POST /wallets/:walletId/reconciliation** (d6f1019, 9287ba2)
   Done when: e2e for consistent and corrupted cases.
 
 - [ ] **T68 Health**

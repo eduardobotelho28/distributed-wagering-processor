@@ -4,6 +4,7 @@ import { buildMikroOrmOptions } from "../../src/infrastructure/persistence/mikro
 
 export interface TestDatabase {
   orm: MikroORM;
+  url: string;
   dispose(): Promise<void>;
 }
 
@@ -20,10 +21,12 @@ export async function createTestDatabase(): Promise<TestDatabase> {
   const name = `test_${crypto.randomUUID().replaceAll("-", "")}`;
   const admin = await MikroORM.init(buildMikroOrmOptions(baseUrl));
   await admin.em.getConnection().execute(`create database ${name}`);
-  const orm = await MikroORM.init(buildMikroOrmOptions(urlForDatabase(baseUrl, name)));
+  const url = urlForDatabase(baseUrl, name);
+  const orm = await MikroORM.init(buildMikroOrmOptions(url));
   await orm.migrator.up();
   return {
     orm,
+    url,
     async dispose() {
       await orm.close();
       await admin.em.getConnection().execute(`drop database if exists ${name}`);
