@@ -1,4 +1,5 @@
 import Decimal from "decimal.js";
+import { CurrencyMismatchError } from "./currency-mismatch.error";
 import { InvalidMoneyError } from "./invalid-money.error";
 
 // Aqui eu crio uma cópia da classe Decimal com precisão de 40 dígitos e limites de expoente para evitar notação científica em valores monetários. Isso garante que os valores sejam representados de forma legível e consistente, especialmente quando lidamos com grandes quantias de dinheiro.
@@ -35,6 +36,27 @@ export class Money {
 
   static zero(currency: string): Money {
     return new Money(new MoneyDecimal(0), Money.parseCurrency(currency));
+  }
+
+  add(other: Money): Money {
+    this.assertSameCurrency(other);
+    return new Money(this.value.plus(other.value), this.currency);
+  }
+
+  // DECISION: subtract pode gerar Money negativo. Quem decide se saldo negativo é permitido é a Wallet,
+  // não o value object. INVARIANT: balance >= 0 é garantido pela Wallet e pelo CHECK no banco.
+  subtract(other: Money): Money {
+    this.assertSameCurrency(other);
+    return new Money(this.value.minus(other.value), this.currency);
+  }
+
+  negate(): Money {
+    return new Money(this.value.negated(), this.currency);
+  }
+
+  assertSameCurrency(other: Money): void {
+    if (other.currency !== this.currency)
+      throw new CurrencyMismatchError(this.currency, other.currency);
   }
 
   toJSON(): MoneyJSON {
