@@ -424,7 +424,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   ROLLBACK and REFUND delivered before their BET, in parallel with the BET.
   Done when: final state correct and single-reversal rule holds under race.
 
-- [ ] **T92 Concurrent reversals of the same reference**
+- [x] **T92 Concurrent reversals of the same reference** (38fdf43)
   Two ROLLBACKs (and REFUND + ROLLBACK) of the same BET in parallel -> exactly one PROCESSED.
   Done when: green.
 
