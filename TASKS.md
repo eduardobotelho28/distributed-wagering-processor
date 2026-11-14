@@ -65,7 +65,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   ESLint (typescript-eslint) + Prettier. Rules: `no-explicit-any`, `no-non-null-assertion`, `no-restricted-globals`/syntax for `parseFloat`, `Number(`, `.toFixed(` inside `src/**`.
   Done when: `bun run lint` passes; adding `parseFloat("1")` makes it fail.
 
-- [ ] **T09 Scripts**
+- [x] **T09 Scripts** (818c0db, a6471e9)
   `package.json` scripts: `lint`, `typecheck`, `test`, `test:unit`, `test:integration`, `test:concurrency`, `migration:up`, `migration:down`, `migration:create`, `start`, `start:dev`. Document how to run each through `docker compose run`.
   Done when: all scripts exist (placeholders allowed for ones that depend on later tasks).
 
