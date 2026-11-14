@@ -92,13 +92,33 @@ export class WagerMessageConsumer {
     private readonly options: ConsumerOptions,
   ) {}
 
-  async pollOnce(maxMessages: number, waitTimeSeconds: number): Promise<number> {
+  // DECISION: as mensagens do lote são tratadas em sequência; preserva a ordem FIFO do grupo
+  // (walletId) e torna o shutdown simples: no máximo UMA mensagem em andamento.
+  // `shouldStop` é consultado antes de cada mensagem; as não iniciadas voltam para a fila na
+  // hora (visibilidade 0) em vez de esperar o timeout de visibilidade.
+  async pollOnce(
+    maxMessages: number,
+    waitTimeSeconds: number,
+    shouldStop: () => boolean = () => false,
+  ): Promise<number> {
     const messages = await this.deps.queue.receive(this.options.queueName, {
       maxMessages,
       waitTimeSeconds,
     });
-    for (const message of messages) await this.handle(message);
+    for (const [index, message] of messages.entries()) {
+      if (shouldStop()) {
+        await this.release(messages.slice(index));
+        return index;
+      }
+      await this.handle(message);
+    }
     return messages.length;
+  }
+
+  private async release(messages: ReceivedMessage[]): Promise<void> {
+    for (const message of messages) {
+      await this.deps.queue.changeVisibility(this.options.queueName, message.receiptHandle, 0);
+    }
   }
 
   async handle(received: ReceivedMessage): Promise<Disposition> {

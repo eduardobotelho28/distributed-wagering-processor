@@ -13,7 +13,7 @@ import {
   type WalletBody,
   walletToBody,
 } from "../mappers/resource.mapper";
-import * as tokens from "../tokens";
+import * as tokens from "../../tokens";
 import { parseCreateWalletRequest } from "../validation/create-wallet.request";
 import { readCursor, readLimit, readPathUuid } from "../validation/path-and-query";
 
