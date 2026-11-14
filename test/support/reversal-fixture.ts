@@ -1,4 +1,4 @@
-import type { SubmitResult } from "../../src/application/ports/submit-result";
+import type { RecordedSubmitResult } from "../../src/application/ports/submit-result";
 import type { TransactionKind } from "../../src/domain/transaction/transaction-kind";
 import { brl, type SubmitFixture } from "./submit-fixture";
 
@@ -7,7 +7,7 @@ export async function submitReference(
   kind: TransactionKind,
   amount: string,
   externalTransactionId = `ref-${crypto.randomUUID()}`,
-): Promise<{ result: SubmitResult; externalTransactionId: string }> {
+): Promise<{ result: RecordedSubmitResult; externalTransactionId: string }> {
   const result = await fixture.useCase.execute(
     fixture.input({ kind, money: brl(amount), externalTransactionId }),
   );
@@ -19,7 +19,7 @@ export function submitReversal(
   kind: TransactionKind,
   referenceExternalTransactionId: string,
   amount: string,
-): Promise<SubmitResult> {
+): Promise<RecordedSubmitResult> {
   return fixture.useCase.execute(
     fixture.input({ kind, money: brl(amount), referenceExternalTransactionId }),
   );

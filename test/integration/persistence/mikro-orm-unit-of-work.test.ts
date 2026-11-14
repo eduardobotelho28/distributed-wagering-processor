@@ -60,15 +60,13 @@ async function writeEverything(repositories: TransactionalRepositories): Promise
     receivedAt: FIXED_NOW,
   });
   await repositories.inbox.tryInsert(inbox);
-  const outbox = OutboxMessage.enqueue(
-    {
-      eventId: crypto.randomUUID(),
-      eventType: "WalletBalanceChanged",
-      occurredAt: FIXED_NOW,
-      toJSON: () => ({}),
-    },
-    wallet.id,
-  );
+  const outbox = OutboxMessage.enqueue({
+    eventId: crypto.randomUUID(),
+    eventType: "WalletBalanceChanged",
+    aggregateId: wallet.id,
+    occurredAt: FIXED_NOW,
+    toJSON: () => ({}),
+  });
   await repositories.outbox.insert(outbox);
   return {
     walletId: wallet.id,

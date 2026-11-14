@@ -12,13 +12,14 @@ const at = (ms: number): Date => new Date(occurredAt.getTime() + ms);
 const event: OutboxEvent = {
   eventId: "evt-1",
   eventType: "WagerTransactionProcessed",
+  aggregateId: "aggregate-1",
   occurredAt,
   toJSON: () => ({ eventId: "evt-1", data: { amount: "10.00" } }),
 };
 
 describe("OutboxMessage", () => {
   test("is enqueued pending and due at the event time", () => {
-    const message = OutboxMessage.enqueue(event, "aggregate-1");
+    const message = OutboxMessage.enqueue(event);
     expect(message.isPending()).toBe(true);
     expect(message.attempts).toBe(0);
     expect(message.isDue(occurredAt)).toBe(true);
@@ -29,7 +30,7 @@ describe("OutboxMessage", () => {
   });
 
   test("doubles the retry delay on each failure", () => {
-    const message = OutboxMessage.enqueue(event, "aggregate-1");
+    const message = OutboxMessage.enqueue(event);
     const delays = [1_000, 2_000, 4_000, 8_000, 16_000];
     for (const delay of delays) {
       message.scheduleRetry(occurredAt);
@@ -39,7 +40,7 @@ describe("OutboxMessage", () => {
   });
 
   test("caps the retry delay", () => {
-    const message = OutboxMessage.enqueue(event, "aggregate-1");
+    const message = OutboxMessage.enqueue(event);
     for (let i = 0; i < 20; i++) {
       message.scheduleRetry(occurredAt);
     }
@@ -47,14 +48,14 @@ describe("OutboxMessage", () => {
   });
 
   test("is not due before the retry time", () => {
-    const message = OutboxMessage.enqueue(event, "aggregate-1");
+    const message = OutboxMessage.enqueue(event);
     message.scheduleRetry(occurredAt);
     expect(message.isDue(at(999))).toBe(false);
     expect(message.isDue(at(1_000))).toBe(true);
   });
 
   test("stops being pending or due once published", () => {
-    const message = OutboxMessage.enqueue(event, "aggregate-1");
+    const message = OutboxMessage.enqueue(event);
     message.markPublished(at(10));
     expect(message.isPending()).toBe(false);
     expect(message.isDue(at(10))).toBe(false);
@@ -62,7 +63,7 @@ describe("OutboxMessage", () => {
   });
 
   test("rejects publishing or retrying an already published message", () => {
-    const message = OutboxMessage.enqueue(event, "aggregate-1");
+    const message = OutboxMessage.enqueue(event);
     message.markPublished(at(10));
     expect(() => message.markPublished(at(20))).toThrow(InvariantViolationError);
     expect(() => message.scheduleRetry(at(20))).toThrow(InvariantViolationError);

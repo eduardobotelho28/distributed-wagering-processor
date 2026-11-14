@@ -8,7 +8,12 @@ import { Money } from "../../../../src/domain/money/money";
 import { OutboxMessage } from "../../../../src/domain/outbox/outbox-message";
 import { TransactionKind } from "../../../../src/domain/transaction/transaction-kind";
 
-const base = { eventId: "evt-1", occurredAt: new Date("2026-01-01T00:00:00.000Z") };
+const base = {
+  eventId: "evt-1",
+  occurredAt: new Date("2026-01-01T00:00:00.000Z"),
+  correlationId: "corr-1",
+  causationId: "msg-1",
+};
 const brl = (amount: string): Money => Money.from({ amount, currency: "BRL" });
 
 describe("integration events", () => {
@@ -67,7 +72,7 @@ describe("integration events", () => {
       balanceBefore: brl("1.00"),
       balanceAfter: brl("2.00"),
     });
-    const message = OutboxMessage.enqueue(event, "aggregate-1");
+    const message = OutboxMessage.enqueue(event);
     expect(message.eventType).toBe("WalletBalanceChanged");
     expect(message.payload).toEqual({ ...event.toJSON() });
   });

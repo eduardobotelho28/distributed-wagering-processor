@@ -28,6 +28,7 @@ export interface StoredWagerTransaction {
 }
 
 export interface WagerTransactionRepositoryPort {
+  // Lança DuplicateIdempotencyKeyError quando a key já foi gravada por outra transação.
   insert(transaction: WagerTransaction, state?: WagerTransactionPersistenceState): Promise<void>;
   update(transaction: WagerTransaction, state?: WagerTransactionPersistenceState): Promise<void>;
   findById(id: string): Promise<WagerTransaction | null>;

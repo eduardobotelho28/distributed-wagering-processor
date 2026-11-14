@@ -261,15 +261,15 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   Persist as `PENDING_REFERENCE` with `next_attempt_at`, emit `WagerTransactionPendingReference`, return pending result.
   Done when: test covers the persisted state and the event.
 
-- [ ] **T55 [CORE] Outbox events inside the same transaction**
+- [x] **T55 [CORE] Outbox events inside the same transaction** (da791b1)
   Emit `WagerTransactionProcessed` (including LOSS), `WagerTransactionRejected`, `WalletBalanceChanged` (only when balance changes), `WagerTransactionPendingReference`. `correlationId` and `causationId` propagated.
   Done when: tests assert which events exist per kind.
 
-- [ ] **T56 [CORE] Race on idempotency key across wallets**
+- [x] **T56 [CORE] Race on idempotency key across wallets** (7301f51)
   If the insert hits the UNIQUE constraint (same key sent with different wallets in parallel), catch the violation, reload by key, and resolve as replay or conflict.
   Done when: integration test with parallel requests, same key, two wallets.
 
-- [ ] **T57 Use case unit test sweep**
+- [x] **T57 Use case unit test sweep** (18a63b3)
   Fill gaps: currency conflict, `OPENING` from outside rejected, payload validation at the use case boundary, FAILED path for permanent infra error.
   Done when: every `FailureCode` is produced by at least one test.
 

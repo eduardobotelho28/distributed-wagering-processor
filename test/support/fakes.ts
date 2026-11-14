@@ -1,4 +1,5 @@
 import type { Clock } from "../../src/application/ports/clock";
+import { DuplicateIdempotencyKeyError } from "../../src/application/ports/duplicate-idempotency-key.error";
 import type { IdGenerator } from "../../src/application/ports/id-generator";
 import { InvalidLedgerCursorError } from "../../src/application/ports/invalid-ledger-cursor.error";
 import type {
@@ -86,6 +87,9 @@ export class InMemoryWagerTransactionRepository implements WagerTransactionRepos
   readonly rows = new Map<string, StoredWagerTransaction>();
 
   async insert(transaction: WagerTransaction, state = EMPTY_STATE): Promise<void> {
+    if ((await this.findByIdempotencyKey(transaction.idempotencyKey)) !== null) {
+      throw new DuplicateIdempotencyKeyError(transaction.idempotencyKey);
+    }
     this.rows.set(transaction.id, { transaction, state });
   }
 

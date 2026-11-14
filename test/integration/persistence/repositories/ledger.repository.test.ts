@@ -60,7 +60,9 @@ describe("LedgerRepository pagination", () => {
     expect(pages.flat()).toEqual(all.entries.map((entry) => entry.id));
     expect(new Set(pages.flat()).size).toBe(120);
     await assertLedgerInvariant(em, wallet.id);
-  });
+    // DECISION: timeout próprio; semear 120 lançamentos são ~360 inserts sequenciais e o
+    // padrão de 5s estoura quando o container está sob carga.
+  }, 20_000);
 
   test("breaks ties on the same instant by id", async () => {
     const em = db.orm.em.fork();

@@ -5,6 +5,7 @@ import { InvariantViolationError } from "../errors/invariant-violation.error";
 export interface OutboxEvent {
   eventId: string;
   eventType: string;
+  aggregateId: string;
   occurredAt: Date;
   toJSON(): Record<string, unknown>;
 }
@@ -28,12 +29,10 @@ export const OUTBOX_BACKOFF_CAP_MS = 300_000;
 export class OutboxMessage {
   private constructor(private props: OutboxMessageProps) {}
 
-  // DECISION: aggregateId vem de quem enfileira (id da transação ou carteira afetada), não do
-  // evento; assim o envelope do T29 não muda e o publisher pode agrupar por agregado.
-  static enqueue(event: OutboxEvent, aggregateId: string): OutboxMessage {
+  static enqueue(event: OutboxEvent): OutboxMessage {
     return new OutboxMessage({
       id: event.eventId,
-      aggregateId,
+      aggregateId: event.aggregateId,
       eventType: event.eventType,
       payload: event.toJSON(),
       occurredAt: new Date(event.occurredAt),

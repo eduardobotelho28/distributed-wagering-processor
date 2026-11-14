@@ -1,4 +1,9 @@
-import { type EntityManager, LockMode } from "@mikro-orm/postgresql";
+import {
+  type EntityManager,
+  LockMode,
+  UniqueConstraintViolationException,
+} from "@mikro-orm/postgresql";
+import { DuplicateIdempotencyKeyError } from "../../../application/ports/duplicate-idempotency-key.error";
 import type {
   StoredWagerTransaction,
   WagerTransactionPersistenceState,
@@ -28,6 +33,17 @@ function toDomainOrNull(model: WagerTransactionModel | null): WagerTransaction |
   return model === null ? null : wagerTransactionToDomain(model);
 }
 
+const IDEMPOTENCY_KEY_CONSTRAINT = "wager_transactions_idempotency_key_unique";
+
+// RISK: o MikroORM não expõe o nome da constraint em campo tipado; ele vem na mensagem do
+// Postgres. O teste de integração da corrida (T56) quebra se o formato mudar.
+function isIdempotencyKeyViolation(error: unknown): boolean {
+  return (
+    error instanceof UniqueConstraintViolationException &&
+    error.message.includes(IDEMPOTENCY_KEY_CONSTRAINT)
+  );
+}
+
 function toStored(model: WagerTransactionModel): StoredWagerTransaction {
   return { transaction: wagerTransactionToDomain(model), state: wagerTransactionStateOf(model) };
 }
@@ -42,7 +58,14 @@ export class WagerTransactionRepository implements WagerTransactionRepositoryPor
     transaction: WagerTransaction,
     state: WagerTransactionPersistenceState = EMPTY_PERSISTENCE_STATE,
   ): Promise<void> {
-    await this.em.insert(WagerTransactionSchema, wagerTransactionToModel(transaction, state));
+    try {
+      await this.em.insert(WagerTransactionSchema, wagerTransactionToModel(transaction, state));
+    } catch (error) {
+      if (isIdempotencyKeyViolation(error)) {
+        throw new DuplicateIdempotencyKeyError(transaction.idempotencyKey);
+      }
+      throw error;
+    }
   }
 
   async update(
