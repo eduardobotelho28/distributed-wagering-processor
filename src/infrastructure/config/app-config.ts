@@ -32,8 +32,8 @@ export class ConfigValidationError extends Error {
   }
 }
 
-// DECISION: problems are collected and reported together, so one boot attempt lists every
-// invalid var. Messages name the variable but never echo its value (DATABASE_URL has a password).
+// decisão: qualquer problema de configuração é reportado de uma vez, para que a primeira tentativa de boot liste todas as variáveis inválidas. As mensagens nomeiam a variável, mas nunca ecoam seu valor (DATABASE_URL tem uma senha).
+
 class EnvironmentReader {
   private readonly problems: string[] = [];
 
@@ -76,8 +76,8 @@ class EnvironmentReader {
   }
 }
 
-// DECISION: connection settings (DB, SQS) are required and fail fast; tuning knobs
-// (intervals, batch sizes) have safe defaults so a minimal .env still boots.
+// decisão: as string de conexão (DB, SQS) são obrigatórias e falham rápido; os ajustes (intervalos, tamanhos de lote) têm valores padrão seguros para que um .env mínimo ainda funcione.
+
 export function loadConfig(env: Environment): AppConfig {
   const read = new EnvironmentReader(env);
   const config: AppConfig = {

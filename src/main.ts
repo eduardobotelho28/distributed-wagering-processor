@@ -3,8 +3,8 @@ import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
 import { loadConfig } from "./infrastructure/config/app-config";
 
-// DECISION: config is validated before Nest boots, so a missing var stops the process
-// with a clear message instead of failing later inside a provider.
+// aqui eu valido a configuração (.env) antes do Nest bootar, então uma variável ausente interrompe o processo com uma mensagem clara em vez de falhar mais tarde dentro de um provider.
+
 async function bootstrap(): Promise<void> {
   const config = loadConfig(process.env);
   const app = await NestFactory.create(AppModule.register(config));
