@@ -383,7 +383,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   JSON logger, `AsyncLocalStorage` context with `correlationId`, `messageId`, `transactionId`, `walletId`, `providerId`. Redaction: never log full payloads or amounts beyond what is needed.
   Done when: test asserts log shape and absence of payload.
 
-- [ ] **T82 Metrics**
+- [x] **T82 Metrics** (df08106)
   `prom-client`, `/metrics`. Counters/histograms: transactions by status, duplicates detected, retries, DLQ messages, lock conflicts/timeouts, outbox lag, processing latency, reconciliation divergences.
   Done when: each metric is incremented in at least one test.
 
