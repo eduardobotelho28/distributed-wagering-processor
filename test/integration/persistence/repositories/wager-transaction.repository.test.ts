@@ -54,7 +54,8 @@ describe("WagerTransactionRepository lookups", () => {
     );
 
     expect(byId?.money.toJSON()).toEqual({ amount: "10.00", currency: "BRL" });
-    expect(byKey?.id).toBe(transaction.id);
+    expect(byKey?.transaction.id).toBe(transaction.id);
+    expect(byKey?.state.pendingAttempts).toBe(0);
     expect(byExternal?.id).toBe(transaction.id);
     expect(await repository().findByIdempotencyKey("unknown")).toBeNull();
     expect(

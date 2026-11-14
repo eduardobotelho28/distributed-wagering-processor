@@ -28,6 +28,10 @@ function toDomainOrNull(model: WagerTransactionModel | null): WagerTransaction |
   return model === null ? null : wagerTransactionToDomain(model);
 }
 
+function toStored(model: WagerTransactionModel): StoredWagerTransaction {
+  return { transaction: wagerTransactionToDomain(model), state: wagerTransactionStateOf(model) };
+}
+
 // DECISION: mesma política do WalletRepository: leituras fora do identity map, escritas nativas.
 export class WagerTransactionRepository implements WagerTransactionRepositoryPort {
   constructor(private readonly em: EntityManager) {}
@@ -66,8 +70,9 @@ export class WagerTransactionRepository implements WagerTransactionRepositoryPor
     return toDomainOrNull(await this.findOne({ id }));
   }
 
-  async findByIdempotencyKey(idempotencyKey: string): Promise<WagerTransaction | null> {
-    return toDomainOrNull(await this.findOne({ idempotencyKey }));
+  async findByIdempotencyKey(idempotencyKey: string): Promise<StoredWagerTransaction | null> {
+    const model = await this.findOne({ idempotencyKey });
+    return model === null ? null : toStored(model);
   }
 
   async findByProviderAndExternalId(
@@ -99,10 +104,7 @@ export class WagerTransactionRepository implements WagerTransactionRepositoryPor
         disableIdentityMap: true,
       },
     );
-    return models.map((model) => ({
-      transaction: wagerTransactionToDomain(model),
-      state: wagerTransactionStateOf(model),
-    }));
+    return models.map(toStored);
   }
 
   private findOne(where: Partial<WagerTransactionModel>): Promise<WagerTransactionModel | null> {
