@@ -1,7 +1,7 @@
 import tseslint from "typescript-eslint";
 
-// DECISION: money must never pass through JS floats. These bans make the
-// AGENTS.md hard rule mechanical instead of relying on review.
+// Aqui validamos algumas coisas no próprio LINT, isto impede o uso de floats, Number.parseFloat, etc.. Por óbvio, isto é apenas uma camada a mais de qualidade e não substitui as validações feitas no Domínio, que são mais robustas e completas. O LINT é apenas uma camada de segurança para evitar que alguém use floats por engano.
+
 const floatMoneyBans = {
   "no-restricted-globals": [
     "error",
