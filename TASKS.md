@@ -289,7 +289,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   Global exception filter and a result-to-HTTP mapper implementing the fixed status table. Error body: `{ code, message, retryable }`.
   Done when: unit tests per mapping; table copied into a comment.
 
-- [ ] **T61 Request validation**
+- [x] **T61 Request validation** (ba2e9a8)
   Validate at the edge (ask before adding a lib; prefer what Nest already offers). Invalid payload -> 400 with `code`. `Idempotency-Key` header required.
   Done when: tests for missing header, invalid money, unknown kind, `OPENING`.
 
