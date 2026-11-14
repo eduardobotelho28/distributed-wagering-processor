@@ -41,7 +41,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   `Dockerfile` based on `oven/bun:1`, workdir `/app`, install deps, `.dockerignore`.
   Done when: `docker build .` succeeds.
 
-- [ ] **T03 Compose: PostgreSQL**
+- [x] **T03 Compose: PostgreSQL** (ef297ef)
   `docker-compose.yml` with `postgres:16`, named volume, healthcheck (`pg_isready`), env from `.env`.
   Done when: `docker compose up -d postgres` is healthy.
 
