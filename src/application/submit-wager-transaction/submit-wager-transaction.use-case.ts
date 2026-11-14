@@ -1,4 +1,6 @@
 import { FailureCode } from "../../domain/errors/failure-code";
+import { WagerTransactionPendingReference } from "../../domain/events/wager-transaction-pending-reference.event";
+import { OutboxMessage } from "../../domain/outbox/outbox-message";
 import { InvariantViolationError } from "../../domain/errors/invariant-violation.error";
 import type { Money } from "../../domain/money/money";
 import { computePayloadHash } from "../../domain/transaction/payload-hash";
@@ -159,6 +161,17 @@ export class SubmitWagerTransactionUseCase {
       pendingAttempts: 0,
       nextAttemptAt: new Date(now.getTime() + PENDING_REFERENCE_FIRST_RETRY_MS),
     });
+    // INVARIANT: o evento vai para o outbox na mesma transação SQL; só é publicado após o commit.
+    const event = WagerTransactionPendingReference.create({
+      eventId: this.ids.next(),
+      occurredAt: now,
+      transactionId: transaction.id,
+      walletId: transaction.walletId,
+      kind: transaction.kind,
+      amount: transaction.money,
+      referenceExternalTransactionId: requireReferenceExternalId(transaction),
+    });
+    await repositories.outbox.insert(OutboxMessage.enqueue(event, transaction.id));
     return { outcome: "pendingReference", transactionId: transaction.id, idempotentReplay: false };
   }
 
