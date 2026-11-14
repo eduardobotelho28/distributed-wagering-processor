@@ -257,7 +257,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   Same resolution; direction is the inverse of the reference. If the inverse debit would make the balance negative -> REJECTED with `REVERSAL_WOULD_OVERDRAW`, auditable, no ledger.
   Done when: tests for rollback of BET, WIN and REFUND, plus overdraw.
 
-- [ ] **T54 [CORE] Reference not found -> PENDING_REFERENCE**
+- [x] **T54 [CORE] Reference not found -> PENDING_REFERENCE** (af65fc3)
   Persist as `PENDING_REFERENCE` with `next_attempt_at`, emit `WagerTransactionPendingReference`, return pending result.
   Done when: test covers the persisted state and the event.
 
