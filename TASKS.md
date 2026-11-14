@@ -161,7 +161,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   Install `@mikro-orm/core`, `postgresql`, `nestjs`, `migrations`. Config with env, Nest module, connection check. Add a DECISION comment on why MikroORM (Unit of Work, `transactional`, `LockMode`).
   Done when: app connects to Postgres in compose.
 
-- [ ] **T31 Migration: wallets**
+- [x] **T31 Migration: wallets** (900cdf1)
   Columns: `id uuid PK`, `player_id`, `currency char(3)`, `balance numeric(19,2)`, `version int`, `created_at`, `updated_at`. `UNIQUE(player_id, currency)`, `CHECK (balance >= 0)`. Reversible `down`.
   Done when: up and down both run.
 
