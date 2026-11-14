@@ -177,7 +177,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   `inbox_messages` PK `(consumer_name, message_id)`. `outbox_messages` with `attempts`, `next_attempt_at`, `published_at`, partial index on unpublished rows.
   Done when: up and down both run.
 
-- [ ] **T35 Migration: single reversal per reference**
+- [x] **T35 Migration: single reversal per reference** (c45098e)
   Partial `UNIQUE` index on `wager_transactions(reference_transaction_id) WHERE status = 'PROCESSED' AND reference_transaction_id IS NOT NULL`.
   Done when: inserting two processed reversals of the same reference fails.
 
