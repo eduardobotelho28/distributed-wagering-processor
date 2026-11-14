@@ -93,7 +93,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   `add`, `subtract`, `negate` returning new instances; `assertSameCurrency` throwing a domain error. `subtract` may produce a negative Money internally (the Wallet decides if it is allowed).
   Done when: no `number` anywhere in the file.
 
-- [ ] **T15 [CORE] Money: comparisons and string forms**
+- [x] **T15 [CORE] Money: comparisons and string forms** (93ad672)
   `isZero`, `isPositive`, `isNegative`, `isLessThan`, `equals`, `toString`.
   Done when: cross-currency comparison throws.
 

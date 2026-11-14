@@ -55,6 +55,30 @@ export class Money {
     return new Money(this.value.negated(), this.currency);
   }
 
+  isZero(): boolean {
+    return this.value.isZero();
+  }
+
+  isPositive(): boolean {
+    return this.value.greaterThan(0);
+  }
+
+  isNegative(): boolean {
+    return this.value.lessThan(0);
+  }
+
+  // Aqui eu decidi que comparar moedas diferentes lança erro em vez de retornar false;
+  // comparar BRL com USD é bug de quem chama.
+  isLessThan(other: Money): boolean {
+    this.assertSameCurrency(other);
+    return this.value.lessThan(other.value);
+  }
+
+  equals(other: Money): boolean {
+    this.assertSameCurrency(other);
+    return this.value.equals(other.value);
+  }
+
   assertSameCurrency(other: Money): void {
     if (other.currency !== this.currency)
       throw new CurrencyMismatchError(this.currency, other.currency);
@@ -62,6 +86,10 @@ export class Money {
 
   toJSON(): MoneyJSON {
     return { amount: this.formatAmount(), currency: this.currency };
+  }
+
+  toString(): string {
+    return `${this.formatAmount()} ${this.currency}`;
   }
 
   private static parseCurrency(currency: unknown): string {
