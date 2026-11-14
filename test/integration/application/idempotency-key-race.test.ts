@@ -12,21 +12,20 @@ import { WagerTransactionSchema } from "../../../src/infrastructure/persistence/
 import { SystemClock } from "../../../src/infrastructure/time/system-clock";
 import { UuidV7IdGenerator } from "../../../src/infrastructure/time/uuid-v7-id-generator";
 import { assertLedgerInvariant } from "../../support/ledger-invariant";
+import { asRecorded, type RecordedSubmitter } from "../../support/submit-fixture";
 import { createTestDatabase, type TestDatabase } from "../../support/test-database";
 
 const ROUNDS = 10;
 const brl = (amount: string): Money => Money.from({ amount, currency: "BRL" });
 let db: TestDatabase;
-let submit: SubmitWagerTransactionUseCase;
+let submit: RecordedSubmitter;
 let createWallet: CreateWalletUseCase;
 
 beforeAll(async () => {
   db = await createTestDatabase();
   const unitOfWork = new MikroOrmUnitOfWork(db.orm);
-  submit = new SubmitWagerTransactionUseCase(
-    unitOfWork,
-    new SystemClock(),
-    new UuidV7IdGenerator(),
+  submit = asRecorded(
+    new SubmitWagerTransactionUseCase(unitOfWork, new SystemClock(), new UuidV7IdGenerator()),
   );
   createWallet = new CreateWalletUseCase(unitOfWork, new SystemClock(), new UuidV7IdGenerator());
 });

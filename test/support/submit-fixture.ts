@@ -1,4 +1,5 @@
 import { CreateWalletUseCase } from "../../src/application/create-wallet/create-wallet.use-case";
+import type { RecordedSubmitResult } from "../../src/application/ports/submit-result";
 import {
   type SubmitWagerTransactionInput,
   SubmitWagerTransactionUseCase,
@@ -11,9 +12,28 @@ import { FixedClock, InMemoryUnitOfWork, SequentialIdGenerator } from "./fakes";
 
 export const brl = (amount: string): Money => Money.from({ amount, currency: "BRL" });
 
+// Os testes de fluxo sempre enviam payload válido; o wrapper estreita o tipo para resultados
+// gravados. Validação de payload é testada direto em `rawUseCase`.
+export interface RecordedSubmitter {
+  execute(input: SubmitWagerTransactionInput): Promise<RecordedSubmitResult>;
+}
+
+export function asRecorded(useCase: SubmitWagerTransactionUseCase): RecordedSubmitter {
+  return {
+    async execute(input) {
+      const result = await useCase.execute(input);
+      if (result.outcome === "invalidPayload") {
+        throw new Error(`invalid payload: ${result.reason}`);
+      }
+      return result;
+    },
+  };
+}
+
 export interface SubmitFixture {
   unitOfWork: InMemoryUnitOfWork;
-  useCase: SubmitWagerTransactionUseCase;
+  useCase: RecordedSubmitter;
+  rawUseCase: SubmitWagerTransactionUseCase;
   wallet: Wallet;
   input(overrides?: Partial<SubmitWagerTransactionInput>): SubmitWagerTransactionInput;
 }
@@ -30,10 +50,12 @@ export async function createSubmitFixture(initialBalance = "100.00"): Promise<Su
   });
   if (created.outcome !== "created") throw new Error("expected created wallet");
   const wallet = created.wallet;
+  const rawUseCase = new SubmitWagerTransactionUseCase(unitOfWork, clock, ids);
   return {
     unitOfWork,
     wallet,
-    useCase: new SubmitWagerTransactionUseCase(unitOfWork, clock, ids),
+    rawUseCase,
+    useCase: asRecorded(rawUseCase),
     input(overrides = {}) {
       externalCounter += 1;
       const externalTransactionId = overrides.externalTransactionId ?? `ext-${externalCounter}`;

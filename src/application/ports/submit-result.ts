@@ -23,6 +23,22 @@ export interface PendingReferenceSubmitResult extends SubmitResultBase {
   outcome: "pendingReference";
 }
 
+// DECISION: FAILED é erro interno permanente (bug determinístico), separado da rejeição de
+// negócio: o provedor não deve corrigir o payload, e sim acionar suporte.
+export interface FailedSubmitResult extends SubmitResultBase {
+  outcome: "failed";
+  failureCode: FailureCode;
+}
+
+export type InvalidPayloadReason =
+  FailureCode.REFERENCE_REQUIRED | "OPENING_NOT_ALLOWED" | "AMOUNT_NOT_POSITIVE" | "BLANK_FIELD";
+
+// DECISION: payload inválido não grava nada, então não há transactionId nem replay.
+export interface InvalidPayloadSubmitResult {
+  outcome: "invalidPayload";
+  reason: InvalidPayloadReason;
+}
+
 // DECISION: mesma key com payload diferente não é replay nem rejeição de negócio; é erro do
 // cliente e não grava nada. transactionId aponta a transação original daquela key.
 export interface IdempotencyConflictSubmitResult extends SubmitResultBase {
@@ -31,8 +47,12 @@ export interface IdempotencyConflictSubmitResult extends SubmitResultBase {
 
 // DECISION: rejeição de negócio e pendência são resultados, não exceções; HTTP e SQS mapeiam
 // cada `outcome` para a sua resposta sem interpretar mensagem de erro.
-export type SubmitResult =
+// Resultados que correspondem a uma transação gravada (ou já existente para a key).
+export type RecordedSubmitResult =
   | ProcessedSubmitResult
   | RejectedSubmitResult
   | PendingReferenceSubmitResult
-  | IdempotencyConflictSubmitResult;
+  | IdempotencyConflictSubmitResult
+  | FailedSubmitResult;
+
+export type SubmitResult = RecordedSubmitResult | InvalidPayloadSubmitResult;

@@ -1,5 +1,9 @@
 import { FailureCode } from "../../domain/errors/failure-code";
+import { InvalidTransactionStateError } from "../../domain/errors/invalid-transaction-state.error";
 import { InvariantViolationError } from "../../domain/errors/invariant-violation.error";
+import { CurrencyMismatchError } from "../../domain/money/currency-mismatch.error";
+import { InvalidMoneyError } from "../../domain/money/invalid-money.error";
+import { InsufficientFundsError } from "../../domain/wallet/insufficient-funds.error";
 import type { Money } from "../../domain/money/money";
 import { computePayloadHash } from "../../domain/transaction/payload-hash";
 import { checkReversal } from "../../domain/transaction/reversal-policy";
@@ -16,9 +20,10 @@ import type {
   StoredWagerTransaction,
   WagerTransactionPersistenceState,
 } from "../ports/repositories";
-import type { SubmitResult } from "../ports/submit-result";
+import type { RecordedSubmitResult, SubmitResult } from "../ports/submit-result";
 import type { TransactionalRepositories, UnitOfWork } from "../ports/unit-of-work";
 import { SubmissionEvents } from "./submission-events";
+import { validateSubmission } from "./validate-submission";
 
 export interface SubmitWagerTransactionInput {
   idempotencyKey: string;
@@ -55,12 +60,35 @@ export class SubmitWagerTransactionUseCase {
   ) {}
 
   async execute(input: SubmitWagerTransactionInput): Promise<SubmitResult> {
+    const invalidPayload = validateSubmission(input);
+    if (invalidPayload !== null) return invalidPayload;
     try {
       return await this.submit(input);
     } catch (error) {
-      if (!(error instanceof DuplicateIdempotencyKeyError)) throw error;
-      return this.resolveKeyRace(input, error);
+      if (error instanceof DuplicateIdempotencyKeyError) return this.resolveKeyRace(input, error);
+      if (isPermanentFailure(error)) return this.recordFailure(input);
+      throw error;
     }
+  }
+
+  // DECISION: erro de domínio no meio do processamento é bug determinístico; repetir daria o
+  // mesmo erro. A transação original foi desfeita, então gravamos FAILED numa transação nova
+  // para o provedor receber resposta terminal e o replay ser estável. Erros de driver/conexão
+  // não entram aqui: são transitórios e sobem para quem chamou tentar de novo.
+  private recordFailure(input: SubmitWagerTransactionInput): Promise<RecordedSubmitResult> {
+    return this.unitOfWork.run(async (repositories) => {
+      const payloadHash = computePayloadHash(input);
+      const existing = await repositories.transactions.findByIdempotencyKey(input.idempotencyKey);
+      if (existing !== null) return replayOrConflict(existing, payloadHash);
+      const now = this.clock.now();
+      const transaction = this.buildTransaction(input, payloadHash, now);
+      const events = new SubmissionEvents(repositories.outbox, this.ids, input.context, now);
+      const failureCode = FailureCode.INTERNAL_PERMANENT_ERROR;
+      transaction.fail(failureCode);
+      await repositories.transactions.insert(transaction, settled(null));
+      await events.rejected(transaction, failureCode);
+      return failed(transaction.id, failureCode, false);
+    });
   }
 
   // DECISION: a mesma key enviada em paralelo para carteiras diferentes não serializa no lock
@@ -70,7 +98,7 @@ export class SubmitWagerTransactionUseCase {
   private resolveKeyRace(
     input: SubmitWagerTransactionInput,
     error: DuplicateIdempotencyKeyError,
-  ): Promise<SubmitResult> {
+  ): Promise<RecordedSubmitResult> {
     return this.unitOfWork.run(async (repositories) => {
       const existing = await repositories.transactions.findByIdempotencyKey(input.idempotencyKey);
       if (existing === null) throw error;
@@ -82,7 +110,7 @@ export class SubmitWagerTransactionUseCase {
   // key para a mesma carteira serializam no lock; a segunda só procura a key depois que a
   // primeira commitou, então enxerga a transação gravada e vira replay em vez de duplicar.
   // Buscar antes do lock abriria a janela "ambas não acham, ambas processam".
-  private submit(input: SubmitWagerTransactionInput): Promise<SubmitResult> {
+  private submit(input: SubmitWagerTransactionInput): Promise<RecordedSubmitResult> {
     return this.unitOfWork.run(async (repositories) => {
       const wallet = await repositories.wallets.findByIdForUpdate(input.walletId);
       const payloadHash = computePayloadHash(input);
@@ -120,7 +148,7 @@ export class SubmitWagerTransactionUseCase {
     });
   }
 
-  private async process(submission: Submission): Promise<SubmitResult> {
+  private async process(submission: Submission): Promise<RecordedSubmitResult> {
     const { repositories, transaction, wallet, events } = submission;
     if (transaction.money.currency !== wallet.currency) {
       return reject(
@@ -143,7 +171,10 @@ export class SubmitWagerTransactionUseCase {
   // INVARIANT: transação, lançamento e saldo são gravados na mesma transação SQL do lock.
   // INVARIANT: débito sem saldo vira REJECTED antes de tocar a carteira; o saldo nunca fica
   // negativo (também barrado por Wallet.debit e pelo CHECK balance >= 0).
-  private async applyMovement(submission: Submission, movement: Movement): Promise<SubmitResult> {
+  private async applyMovement(
+    submission: Submission,
+    movement: Movement,
+  ): Promise<RecordedSubmitResult> {
     const { repositories, transaction, wallet, events } = submission;
     const { direction, referenceTransactionId, overdraftCode } = movement;
     const now = events.now;
@@ -163,7 +194,7 @@ export class SubmitWagerTransactionUseCase {
     return processed(transaction, wallet.balance);
   }
 
-  private async processReversal(submission: Submission): Promise<SubmitResult> {
+  private async processReversal(submission: Submission): Promise<RecordedSubmitResult> {
     const { repositories, transaction, wallet, events } = submission;
     const reference = await repositories.transactions.findByProviderAndExternalId(
       transaction.providerId,
@@ -187,7 +218,7 @@ export class SubmitWagerTransactionUseCase {
     });
   }
 
-  private async pendReference(submission: Submission): Promise<SubmitResult> {
+  private async pendReference(submission: Submission): Promise<RecordedSubmitResult> {
     const { repositories, transaction, events } = submission;
     const now = events.now;
     transaction.markPendingReference();
@@ -202,7 +233,7 @@ export class SubmitWagerTransactionUseCase {
 
   // DECISION: LOSS fecha a rodada sem lançamento; o débito já ocorreu no BET. O saldo
   // resultante gravado é o atual, para o replay responder o mesmo valor.
-  private async recordWithoutMovement(submission: Submission): Promise<SubmitResult> {
+  private async recordWithoutMovement(submission: Submission): Promise<RecordedSubmitResult> {
     const { repositories, transaction, wallet, events } = submission;
     transaction.markProcessed(events.now, null);
     await repositories.transactions.insert(transaction, settled(wallet.balance));
@@ -217,7 +248,7 @@ async function reject(
   transaction: WagerTransaction,
   failureCode: FailureCode,
   balance: Money | null,
-): Promise<SubmitResult> {
+): Promise<RecordedSubmitResult> {
   transaction.reject(failureCode);
   await repositories.transactions.insert(transaction, settled(balance));
   await events.rejected(transaction, failureCode);
@@ -255,13 +286,16 @@ function settled(resultingBalance: Money | null): WagerTransactionPersistenceSta
   return { resultingBalance, pendingAttempts: 0, nextAttemptAt: null };
 }
 
-function processed(transaction: WagerTransaction, balance: Money): SubmitResult {
+function processed(transaction: WagerTransaction, balance: Money): RecordedSubmitResult {
   return { outcome: "processed", transactionId: transaction.id, balance, idempotentReplay: false };
 }
 
 // DECISION: o replay responde com o saldo gravado em resulting_balance no momento do
 // processamento, não com o saldo atual; a mesma requisição recebe sempre a mesma resposta.
-function replayOrConflict(existing: StoredWagerTransaction, payloadHash: string): SubmitResult {
+function replayOrConflict(
+  existing: StoredWagerTransaction,
+  payloadHash: string,
+): RecordedSubmitResult {
   const { transaction, state } = existing;
   const base = { transactionId: transaction.id, idempotentReplay: true };
   if (!transaction.matchesPayload(payloadHash)) {
@@ -276,8 +310,9 @@ function replayOrConflict(existing: StoredWagerTransaction, payloadHash: string)
       return { ...base, outcome: "processed", balance: requireBalance(state.resultingBalance) };
     case TransactionStatus.PENDING_REFERENCE:
       return { ...base, outcome: "pendingReference" };
-    case TransactionStatus.REJECTED:
     case TransactionStatus.FAILED:
+      return failed(transaction.id, requireFailureCode(transaction), true);
+    case TransactionStatus.REJECTED:
       return {
         ...base,
         outcome: "rejected",
@@ -287,6 +322,26 @@ function replayOrConflict(existing: StoredWagerTransaction, payloadHash: string)
     case TransactionStatus.PENDING:
       throw new InvariantViolationError("a PENDING transaction is never committed");
   }
+}
+
+function failed(
+  transactionId: string,
+  failureCode: FailureCode,
+  idempotentReplay: boolean,
+): RecordedSubmitResult {
+  return { outcome: "failed", transactionId, failureCode, idempotentReplay };
+}
+
+const PERMANENT_ERRORS = [
+  InvariantViolationError,
+  InvalidTransactionStateError,
+  CurrencyMismatchError,
+  InsufficientFundsError,
+  InvalidMoneyError,
+];
+
+function isPermanentFailure(error: unknown): boolean {
+  return PERMANENT_ERRORS.some((errorClass) => error instanceof errorClass);
 }
 
 function requireBalance(balance: Money | null): Money {
