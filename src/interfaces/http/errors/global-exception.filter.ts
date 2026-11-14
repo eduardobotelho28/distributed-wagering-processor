@@ -1,5 +1,6 @@
 import { type ArgumentsHost, Catch, type ExceptionFilter, HttpException } from "@nestjs/common";
 import { isTransientDatabaseError } from "../../../infrastructure/persistence/transient-database-error";
+import { PayloadValidationError } from "../../validation/payload-validation.error";
 import { ApiError, type ErrorBody } from "./api-error";
 import { HttpStatus, RETRY_AFTER_SECONDS } from "./http-status-table";
 
@@ -34,6 +35,13 @@ function fromHttpException(error: HttpException): ErrorReply {
 // aparece no log (T81), nunca no corpo, para não vazar detalhes internos.
 export function toErrorReply(error: unknown): ErrorReply {
   if (error instanceof ApiError) return { status: error.status, body: error.toBody(), headers: {} };
+  if (error instanceof PayloadValidationError) {
+    return {
+      status: HttpStatus.BAD_REQUEST,
+      body: { code: error.code, message: error.message, retryable: false },
+      headers: {},
+    };
+  }
   if (error instanceof HttpException) return fromHttpException(error);
   if (isTransientDatabaseError(error)) {
     return {
