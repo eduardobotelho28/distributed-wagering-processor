@@ -109,7 +109,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   `InvalidMoneyError`, `CurrencyMismatchError`, `InvalidTransactionStateError`, `InvariantViolationError`. Programmer errors are exceptions; business rejections are NOT exceptions.
   Done when: errors carry a stable `code`.
 
-- [ ] **T19 [CORE] WalletLedgerEntry**
+- [x] **T19 [CORE] WalletLedgerEntry** (82460d7)
   Immutable. `create` validates `balanceBefore ± money === balanceAfter` and direction; `rehydrate`; `isBalanced()`. No setters, no transition methods.
   Done when: unbalanced creation throws; tests cover DEBIT and CREDIT.
 
