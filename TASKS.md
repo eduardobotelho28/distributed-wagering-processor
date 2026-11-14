@@ -249,7 +249,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   WIN credits. LOSS marks PROCESSED with no ledger, no balance change, no `WalletBalanceChanged`.
   Done when: tests assert no ledger row for LOSS.
 
-- [ ] **T52 [CORE] REFUND**
+- [x] **T52 [CORE] REFUND** (f6de220)
   Resolve reference by `(providerId, referenceExternalTransactionId)`, apply `ReversalPolicy`, credit. Reference not `PROCESSED` (still pending) is handled like a missing reference.
   Done when: tests for success and each rejection code.
 
