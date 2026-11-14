@@ -157,7 +157,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
 
 ## Phase 2: Persistence
 
-- [ ] **T30 MikroORM setup**
+- [x] **T30 MikroORM setup** (46a7164)
   Install `@mikro-orm/core`, `postgresql`, `nestjs`, `migrations`. Config with env, Nest module, connection check. Add a DECISION comment on why MikroORM (Unit of Work, `transactional`, `LockMode`).
   Done when: app connects to Postgres in compose.
 

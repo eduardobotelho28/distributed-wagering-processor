@@ -13,11 +13,15 @@
     "test:unit": "bun test test/unit test/lint",
     "test:integration": "bun test test/integration",
     "test:concurrency": "bun test test/concurrency",
-    "migration:create": "echo \"migration:create: not available until MikroORM setup (T30)\" >&2 && exit 1",
-    "migration:up": "echo \"migration:up: not available until MikroORM setup (T30)\" >&2 && exit 1",
-    "migration:down": "echo \"migration:down: not available until MikroORM setup (T30)\" >&2 && exit 1"
+    "migration:create": "mikro-orm migration:create",
+    "migration:up": "mikro-orm migration:up",
+    "migration:down": "mikro-orm migration:down"
   },
   "dependencies": {
+    "@mikro-orm/core": "^7.2.9",
+    "@mikro-orm/migrations": "^7.2.9",
+    "@mikro-orm/nestjs": "^7.1.0",
+    "@mikro-orm/postgresql": "^7.2.9",
     "@nestjs/common": "^11",
     "@nestjs/core": "^11",
     "@nestjs/platform-express": "^11",
@@ -26,11 +30,17 @@
     "rxjs": "^7.8.2"
   },
   "devDependencies": {
+    "@mikro-orm/cli": "^7.2.9",
     "@types/bun": "^1.4.4",
     "@typescript/native": "npm:typescript@^7.0.2",
     "eslint": "^10.15.0",
     "prettier": "^3.10.1",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
     "typescript-eslint": "^8.72.2"
+  },
+  "mikro-orm": {
+    "configPaths": [
+      "./src/infrastructure/persistence/mikro-orm.cli.ts"
+    ]
   }
 }
