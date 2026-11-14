@@ -21,8 +21,11 @@ services:
       AWS_DEFAULT_REGION: ${AWS_REGION:-us-east-1}
     ports:
       - "${LOCALSTACK_PORT:-4566}:4566"
+    volumes:
+      - ./docker/localstack/init-queues.sh:/etc/localstack/init/ready.d/init-queues.sh:ro
+    # DECISION: healthy only after the ready.d scripts finished, so dependents never see missing queues.
     healthcheck:
-      test: ["CMD-SHELL", "curl -fs http://localhost:4566/_localstack/health | grep -Eq '\"sqs\": \"(available|running)\"'"]
+      test: ["CMD-SHELL", "curl -fs http://localhost:4566/_localstack/init/ready | grep -q '\"completed\": true' && curl -fs http://localhost:4566/_localstack/health | grep -Eq '\"sqs\": \"(available|running)\"'"]
       interval: 5s
       timeout: 3s
       retries: 20
