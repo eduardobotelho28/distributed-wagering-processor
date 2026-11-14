@@ -169,7 +169,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   Columns for every field in the README plus `resulting_balance numeric(19,2) NULL`, `failure_code`, `processed_at`, `pending_attempts int`, `next_attempt_at`. `UNIQUE(idempotency_key)`, `UNIQUE(provider_id, external_transaction_id)`, CHECK on status/kind values, CHECK that REFUND/ROLLBACK have a reference external id, CHECK `amount >= 0`. Index for due `PENDING_REFERENCE`.
   Done when: up and down both run.
 
-- [ ] **T33 Migration: wallet_ledger_entries**
+- [x] **T33 Migration: wallet_ledger_entries** (3a8f6d6, 70b8e34)
   Columns per README. `UNIQUE(wallet_id, transaction_id)`, CHECKs (`balance_after = balance_before +/- amount` by direction, amount > 0, balance_after >= 0). Trigger that raises on `UPDATE` and `DELETE`. Index `(wallet_id, created_at, id)` for cursor pagination.
   Done when: an UPDATE and a DELETE both fail in a test.
 
