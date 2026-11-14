@@ -25,10 +25,8 @@ const floatMoneyBans = {
   ],
 };
 
-// DECISION: boundaries enforced with core `no-restricted-imports` regexes instead of
-// eslint-plugin-import/boundaries, to avoid a new dependency. Matching is by path segment,
-// so it catches both relative (`../../infrastructure/x`) and bare (`infrastructure/x`) imports.
-// RISK: a folder inside domain named like another layer would be flagged; we do not create such folders.
+// Aqui configurei para que o LINT valide as fronteiras entre os módulos, para evitar que alguém importe algo de outro módulo que não deveria. Por exemplo, o domínio não pode importar nada da infraestrutura ou das interfaces, e a aplicação não pode importar nada da infraestrutura ou das interfaces também. Isso ajuda a manter a arquitetura limpa e respeitar as camadas do sistema.
+
 const outerLayerSegment = "(^|/)(application|infrastructure|interfaces)(/|$)";
 const srcRootModule = "(^|/)(app\\.module|main)(\\.ts)?$";
 
