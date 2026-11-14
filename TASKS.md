@@ -217,7 +217,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   Port in `application`; MikroORM implementation wrapping `em.transactional`. Everything inside shares one transaction.
   Done when: test proves rollback of wallet, ledger, inbox and outbox together on a thrown error.
 
-- [ ] **T45 Constraint tests**
+- [x] **T45 Constraint tests** (76f2bbd)
   One integration test per constraint from T31 to T35 (negative balance, duplicate wallet, duplicate idempotency key, duplicate external id, ledger update/delete, second reversal, unbalanced ledger entry).
   Done when: each constraint fails as expected against real Postgres.
 
