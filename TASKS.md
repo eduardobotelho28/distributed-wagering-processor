@@ -125,7 +125,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   Enums, `create` (born `PENDING`), `rehydrate`, `requiresReference()` (REFUND, ROLLBACK), `affectsBalance()` (false for LOSS). Reject missing reference when required. Reject `OPENING` from external creation (separate internal factory for opening).
   Done when: tests cover each kind.
 
-- [ ] **T23 [CORE] WagerTransaction: state transitions**
+- [x] **T23 [CORE] WagerTransaction: state transitions** (b721306)
   `markProcessed`, `markPendingReference`, `reject`, `fail`, `isTerminal`. Terminal states (`PROCESSED`, `REJECTED`, `FAILED`) throw `InvalidTransactionStateError` on any transition. Write the transition table as a comment above the class: `PENDING -> PROCESSED | PENDING_REFERENCE | REJECTED | FAILED`, `PENDING_REFERENCE -> PROCESSED | REJECTED | FAILED`.
   Done when: a test iterates every (from, action) pair.
 

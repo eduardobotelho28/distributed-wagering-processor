@@ -1,3 +1,4 @@
+import { InvalidTransactionStateError } from "../errors/invalid-transaction-state.error";
 import { InvariantViolationError } from "../errors/invariant-violation.error";
 import type { FailureCode } from "../errors/failure-code";
 import type { Money } from "../money/money";
@@ -41,6 +42,16 @@ const KINDS_REQUIRING_REFERENCE: ReadonlySet<TransactionKind> = new Set([
   TransactionKind.ROLLBACK,
 ]);
 
+const TERMINAL_STATUSES: ReadonlySet<TransactionStatus> = new Set([
+  TransactionStatus.PROCESSED,
+  TransactionStatus.REJECTED,
+  TransactionStatus.FAILED,
+]);
+
+// Tabela de transições:
+//   PENDING           -> PROCESSED | PENDING_REFERENCE | REJECTED | FAILED
+//   PENDING_REFERENCE -> PROCESSED | REJECTED | FAILED
+//   PROCESSED, REJECTED, FAILED são terminais: qualquer transição lança InvalidTransactionStateError.
 export class WagerTransaction {
   private constructor(private readonly props: WagerTransactionProps) {}
 
@@ -84,6 +95,45 @@ export class WagerTransaction {
       processedAt: null,
       createdAt: new Date(input.createdAt),
     });
+  }
+
+  isTerminal(): boolean {
+    return TERMINAL_STATUSES.has(this.props.status);
+  }
+
+  // DECISION: o id interno da referência só é conhecido quando ela é resolvida,
+  // por isso entra aqui e não no create.
+  markProcessed(now: Date, referenceTransactionId: string | null): void {
+    this.assertNotTerminal("markProcessed");
+    this.props.status = TransactionStatus.PROCESSED;
+    this.props.referenceTransactionId = referenceTransactionId;
+    this.props.processedAt = new Date(now);
+  }
+
+  // INVARIANT: PENDING_REFERENCE não volta para si mesmo; só sai para um estado terminal.
+  markPendingReference(): void {
+    if (this.props.status !== TransactionStatus.PENDING) {
+      throw new InvalidTransactionStateError(this.props.status, "markPendingReference");
+    }
+    this.props.status = TransactionStatus.PENDING_REFERENCE;
+  }
+
+  reject(failureCode: FailureCode): void {
+    this.assertNotTerminal("reject");
+    this.props.status = TransactionStatus.REJECTED;
+    this.props.failureCode = failureCode;
+  }
+
+  fail(failureCode: FailureCode): void {
+    this.assertNotTerminal("fail");
+    this.props.status = TransactionStatus.FAILED;
+    this.props.failureCode = failureCode;
+  }
+
+  private assertNotTerminal(action: string): void {
+    if (this.isTerminal()) {
+      throw new InvalidTransactionStateError(this.props.status, action);
+    }
   }
 
   requiresReference(): boolean {
