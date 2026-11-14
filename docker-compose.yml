@@ -23,7 +23,7 @@ services:
       - "${LOCALSTACK_PORT:-4566}:4566"
     volumes:
       - ./docker/localstack/init-queues.sh:/etc/localstack/init/ready.d/init-queues.sh:ro
-    # DECISION: healthy only after the ready.d scripts finished, so dependents never see missing queues.
+    # O healthcheck é feito somente depois que o script de inicialização das filas for executado, garantindo que as filas estejam disponíveis para os serviços dependentes.
     healthcheck:
       test: ["CMD-SHELL", "curl -fs http://localhost:4566/_localstack/init/ready | grep -q '\"completed\": true' && curl -fs http://localhost:4566/_localstack/health | grep -Eq '\"sqs\": \"(available|running)\"'"]
       interval: 5s

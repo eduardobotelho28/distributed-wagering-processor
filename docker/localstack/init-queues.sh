@@ -1,10 +1,8 @@
 #!/bin/bash
 set -euo pipefail
 
-# DECISION: FIFO for wager transactions so messages for the same wallet
-# (MessageGroupId) are delivered in order; the DLQ of a FIFO queue must also be FIFO.
-# RISK: content-based dedup is off; producers must send MessageDeduplicationId.
-# The DB (UNIQUE idempotency_key) stays the real dedup guarantee, not SQS.
+# FIFO para wager transactions para que mensagens para a mesma wallet (MessageGroupId) sejam entregues na ordem; a DLQ de uma fila FIFO também deve ser FIFO.
+# Ponto de Atenação: deduplicação baseada em conteúdo está desativada; os produtores devem enviar MessageDeduplicationId. Logo, a DB (UNIQUE idempotency_key) continua sendo a verdadeira garantia de deduplicação, não o SQS.
 
 DLQ_NAME="wager-transactions-dlq.fifo"
 MAIN_NAME="wager-transactions.fifo"
