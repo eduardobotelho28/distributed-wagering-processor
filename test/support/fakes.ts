@@ -1,5 +1,6 @@
 import type { Clock } from "../../src/application/ports/clock";
 import type { IdGenerator } from "../../src/application/ports/id-generator";
+import { InvalidLedgerCursorError } from "../../src/application/ports/invalid-ledger-cursor.error";
 import type {
   InboxRepositoryPort,
   LedgerPage,
@@ -154,6 +155,7 @@ export class InMemoryLedgerRepository implements LedgerRepositoryPort {
   // DECISION: o cursor do fake é o índice da próxima entrada; o formato real é testado na infra.
   async listByWallet(query: LedgerPageQuery): Promise<LedgerPage> {
     const all = this.entries.filter((entry) => entry.walletId === query.walletId);
+    if (query.cursor !== null && !/^\d+$/.test(query.cursor)) throw new InvalidLedgerCursorError();
     const start = query.cursor === null ? 0 : Number.parseInt(query.cursor, 10);
     const end = start + query.limit;
     return {

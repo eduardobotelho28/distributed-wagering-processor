@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
+import { InvalidLedgerCursorError } from "../../../../src/application/ports/invalid-ledger-cursor.error";
 import {
   decodeLedgerCursor,
   encodeLedgerCursor,
-  InvalidLedgerCursorError,
 } from "../../../../src/infrastructure/persistence/ledger-cursor";
 
 describe("ledger cursor", () => {

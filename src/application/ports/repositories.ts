@@ -57,6 +57,7 @@ export interface LedgerPage {
 
 export interface LedgerRepositoryPort {
   insert(entry: WalletLedgerEntry): Promise<void>;
+  // Lança InvalidLedgerCursorError quando o cursor não foi emitido por esta implementação.
   listByWallet(query: LedgerPageQuery): Promise<LedgerPage>;
   sumByWallet(walletId: string, currency: string): Promise<Money>;
 }
