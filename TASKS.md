@@ -409,7 +409,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
 - [x] **T87 Different wallets in parallel** (e7a991e)
   Done when: N wallets processed concurrently, no cross-blocking beyond DB capacity, invariants hold for all.
 
-- [ ] **T88 Three or more instances**
+- [x] **T88 Three or more instances** (8e4029f)
   Mixed HTTP and SQS load on the same hot wallet.
   Done when: invariant holds, no negative balance.
 
