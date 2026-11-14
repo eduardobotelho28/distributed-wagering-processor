@@ -57,7 +57,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   Minimal Nest app in `src/`, `app` service in compose with hot reload (`bun --watch`), `.env.example`.
   Done when: `docker compose up app` serves the Nest app; no default hello-world controller left.
 
-- [ ] **T07 Strict TypeScript**
+- [x] **T07 Strict TypeScript** (db4c1af)
   `tsconfig.json` with `strict`, `noUncheckedIndexedAccess`, `noImplicitOverride`, `noFallthroughCasesInSwitch`.
   Done when: `bun run typecheck` passes on the scaffold.
 
