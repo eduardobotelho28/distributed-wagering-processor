@@ -1,5 +1,10 @@
 import { type ArgumentsHost, Catch, type ExceptionFilter, HttpException } from "@nestjs/common";
-import { isTransientDatabaseError } from "../../../infrastructure/persistence/transient-database-error";
+import type { Logger } from "../../../application/ports/logger";
+import type { Metrics } from "../../../application/ports/metrics";
+import {
+  isTransientDatabaseError,
+  lockConflictKind,
+} from "../../../infrastructure/persistence/transient-database-error";
 import { PayloadValidationError } from "../../validation/payload-validation.error";
 import { ApiError, type ErrorBody } from "./api-error";
 import { HttpStatus, RETRY_AFTER_SECONDS } from "./http-status-table";
@@ -61,10 +66,29 @@ export function toErrorReply(error: unknown): ErrorReply {
   };
 }
 
+export function recordHttpError(
+  error: unknown,
+  status: number,
+  telemetry: { metrics: Metrics; logger: Logger },
+): void {
+  const conflict = lockConflictKind(error);
+  if (conflict !== null) telemetry.metrics.increment("lock_conflicts_total", { kind: conflict });
+  // DECISION: só 5xx viram log de erro; 4xx são erro do cliente e já aparecem no log de acesso.
+  if (status >= HttpStatus.INTERNAL) {
+    telemetry.logger.error("http request failed", {
+      statusCode: status,
+      error: error instanceof Error ? error.name : "unknown",
+    });
+  }
+}
+
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
+  constructor(private readonly telemetry: { metrics: Metrics; logger: Logger }) {}
+
   catch(error: unknown, host: ArgumentsHost): void {
     const reply = toErrorReply(error);
+    recordHttpError(error, reply.status, this.telemetry);
     const response = host.switchToHttp().getResponse<HttpResponse>();
     for (const [name, value] of Object.entries(reply.headers)) response.setHeader(name, value);
     response.status(reply.status).json(reply.body);

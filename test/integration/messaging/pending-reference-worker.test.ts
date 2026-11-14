@@ -11,7 +11,7 @@ import { WagerTransactionSchema } from "../../../src/infrastructure/persistence/
 import { WalletSchema } from "../../../src/infrastructure/persistence/models/wallet.model";
 import { UuidV7IdGenerator } from "../../../src/infrastructure/time/uuid-v7-id-generator";
 import { drainPendingReferences } from "../../../src/interfaces/workers/pending-reference.tick";
-import { FixedClock } from "../../support/fakes";
+import { FixedClock, RecordingLogger, RecordingMetrics } from "../../support/fakes";
 import { assertLedgerInvariant } from "../../support/ledger-invariant";
 import { walletIn } from "../../support/sqs-fixture";
 import { createTestDatabase, type TestDatabase } from "../../support/test-database";
@@ -69,10 +69,10 @@ describe("pending reference worker", () => {
     );
     expect(rollback.outcome).toBe("pendingReference");
     await submit.execute(input(wallet, TransactionKind.BET, betId, null));
-    expect(await drainPendingReferences(reprocess, 10)).toBe(0);
+    expect(await drainPendingReferences(reprocess, 10, telemetry())).toBe(0);
 
     clock.advance(PENDING_REFERENCE_BASE_DELAY_MS);
-    const attempted = await drainPendingReferences(reprocess, 10);
+    const attempted = await drainPendingReferences(reprocess, 10, telemetry());
 
     expect(attempted).toBe(1);
     expect((await statusOf(rollbackId)).status).toBe(TransactionStatus.PROCESSED);
@@ -97,8 +97,13 @@ describe("pending reference worker", () => {
     const attempted = await drainPendingReferences(
       new ReprocessPendingReferenceUseCase(unitOfWork, clock, ids),
       2,
+      telemetry(),
     );
 
     expect(attempted).toBe(2);
   });
 });
+
+function telemetry(): { logger: RecordingLogger; metrics: RecordingMetrics } {
+  return { logger: new RecordingLogger(), metrics: new RecordingMetrics() };
+}

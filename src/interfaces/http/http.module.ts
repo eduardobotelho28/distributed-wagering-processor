@@ -1,6 +1,6 @@
 import { MikroORM } from "@mikro-orm/postgresql";
 import { Module, type Provider } from "@nestjs/common";
-import { APP_GUARD } from "@nestjs/core";
+import { APP_GUARD, APP_INTERCEPTOR } from "@nestjs/core";
 import { CreateWalletUseCase } from "../../application/create-wallet/create-wallet.use-case";
 import type { Clock } from "../../application/ports/clock";
 import type { HealthCheck } from "../../application/ports/health-check";
@@ -25,6 +25,7 @@ import { WalletsController } from "./controllers/wallets.controller";
 import { AuthGuard } from "./auth/auth.guard";
 import { HealthController } from "./health/health.controller";
 import { MetricsController } from "./metrics/metrics.controller";
+import { RequestContextInterceptor } from "./observability/request-context.interceptor";
 import * as tokens from "../tokens";
 
 const infrastructure: Provider[] = [
@@ -38,6 +39,7 @@ const infrastructure: Provider[] = [
   },
   { provide: tokens.PROVIDER_IDENTITY, useValue: new TrustAllProviderIdentity() },
   { provide: APP_GUARD, useClass: AuthGuard },
+  { provide: APP_INTERCEPTOR, useClass: RequestContextInterceptor },
 ];
 
 const core = [tokens.UNIT_OF_WORK, tokens.CLOCK, tokens.ID_GENERATOR];

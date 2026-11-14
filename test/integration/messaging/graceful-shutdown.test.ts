@@ -18,7 +18,7 @@ import { UuidV7IdGenerator } from "../../../src/infrastructure/time/uuid-v7-id-g
 import { CONSUMER_NAME } from "../../../src/interfaces/sqs/sqs-consumer.module";
 import { WagerMessageConsumer } from "../../../src/interfaces/sqs/wager-message.consumer";
 import { startAppProcess, waitFor } from "../../support/app-process";
-import { RecordingLogger } from "../../support/fakes";
+import { RecordingLogger, RecordingMetrics } from "../../support/fakes";
 import { assertLedgerInvariant } from "../../support/ledger-invariant";
 import { createTestDatabase, type TestDatabase } from "../../support/test-database";
 
@@ -106,6 +106,7 @@ async function drainWithFreshConsumer(): Promise<void> {
       abandon: new AbandonWagerMessageUseCase(new MikroOrmUnitOfWork(db.orm), clock, ids),
       clock,
       logger: new RecordingLogger(),
+      metrics: new RecordingMetrics(),
     },
     {
       queueName: mainQueue,

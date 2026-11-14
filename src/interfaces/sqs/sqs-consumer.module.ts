@@ -11,6 +11,7 @@ import { ConsumeWagerMessageUseCase } from "../../application/consume-wager-mess
 import type { Clock } from "../../application/ports/clock";
 import type { IdGenerator } from "../../application/ports/id-generator";
 import type { Logger } from "../../application/ports/logger";
+import type { Metrics } from "../../application/ports/metrics";
 import type { UnitOfWork } from "../../application/ports/unit-of-work";
 import type { AppConfig } from "../../infrastructure/config/app-config";
 import { APP_CONFIG } from "../../infrastructure/config/app-config.module";
@@ -33,6 +34,7 @@ function buildRunner(
   clock: Clock,
   ids: IdGenerator,
   logger: Logger,
+  metrics: Metrics,
 ): ConsumerRunner {
   const consumer = new WagerMessageConsumer(
     {
@@ -41,6 +43,7 @@ function buildRunner(
       abandon: new AbandonWagerMessageUseCase(unitOfWork, clock, ids),
       clock,
       logger,
+      metrics,
     },
     {
       queueName: config.sqs.transactionsQueue,
@@ -79,7 +82,14 @@ const providers: Provider[] = [
   {
     provide: CONSUMER_RUNNER,
     useFactory: buildRunner,
-    inject: [APP_CONFIG, tokens.UNIT_OF_WORK, tokens.CLOCK, tokens.ID_GENERATOR, tokens.LOGGER],
+    inject: [
+      APP_CONFIG,
+      tokens.UNIT_OF_WORK,
+      tokens.CLOCK,
+      tokens.ID_GENERATOR,
+      tokens.LOGGER,
+      tokens.METRICS,
+    ],
   },
   ConsumerLifecycle,
 ];

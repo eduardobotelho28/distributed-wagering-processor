@@ -23,3 +23,17 @@ export function isTransientDatabaseError(error: unknown): boolean {
   const sqlState = error.sqlState ?? error.code ?? "";
   return TRANSIENT_SQLSTATE_PREFIXES.some((prefix) => sqlState.startsWith(prefix));
 }
+
+export type LockConflictKind = "deadlock" | "lock_timeout" | "serialization";
+
+// Classifica conflitos de lock para a métrica lock_conflicts_total; null = não é conflito.
+export function lockConflictKind(error: unknown): LockConflictKind | null {
+  if (error instanceof DeadlockException) return "deadlock";
+  if (error instanceof LockWaitTimeoutException) return "lock_timeout";
+  if (!(error instanceof DriverException)) return null;
+  const sqlState = error.sqlState ?? error.code ?? "";
+  if (sqlState === "40P01") return "deadlock";
+  if (sqlState === "40001") return "serialization";
+  if (sqlState === "55P03") return "lock_timeout";
+  return null;
+}

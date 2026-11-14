@@ -19,7 +19,7 @@ import { OutboxMessageSchema } from "../../../src/infrastructure/persistence/mod
 import { WagerTransactionSchema } from "../../../src/infrastructure/persistence/models/wager-transaction.model";
 import { UuidV7IdGenerator } from "../../../src/infrastructure/time/uuid-v7-id-generator";
 import { drainPendingReferences } from "../../../src/interfaces/workers/pending-reference.tick";
-import { FixedClock } from "../../support/fakes";
+import { FixedClock, RecordingLogger, RecordingMetrics } from "../../support/fakes";
 import { walletIn } from "../../support/sqs-fixture";
 import { createTestDatabase, type TestDatabase } from "../../support/test-database";
 
@@ -120,7 +120,13 @@ describe("background workers against Postgres and LocalStack", () => {
         const flaky = new FlakyQueue(queue);
         const publishers = [1, 2].map(
           () =>
-            new PublishOutboxBatchUseCase(unitOfWork, flaky, clock, { eventsQueue, batchSize: 3 }),
+            new PublishOutboxBatchUseCase(
+              unitOfWork,
+              flaky,
+              clock,
+              { eventsQueue, batchSize: 3 },
+              telemetry(),
+            ),
         );
 
         for (let round = 0; round < 20 && (await pendingOutbox()) > 0; round += 1) {
@@ -146,16 +152,23 @@ describe("background workers against Postgres and LocalStack", () => {
         const submit = new SubmitWagerTransactionUseCase(unitOfWork, clock, ids);
         const refund = betInput(wallet, TransactionKind.REFUND, `missing-${crypto.randomUUID()}`);
         await submit.execute(refund);
-        const publisher = new PublishOutboxBatchUseCase(unitOfWork, queue, clock, {
-          eventsQueue,
-          batchSize: 50,
-        });
+        const publisher = new PublishOutboxBatchUseCase(
+          unitOfWork,
+          queue,
+          clock,
+          {
+            eventsQueue,
+            batchSize: 50,
+          },
+          telemetry(),
+        );
         await publisher.execute();
 
         clock.advance(PENDING_REFERENCE_TTL_MS);
         await drainPendingReferences(
           new ReprocessPendingReferenceUseCase(unitOfWork, clock, ids),
           10,
+          telemetry(),
         );
         await publisher.execute();
 
@@ -174,3 +187,7 @@ describe("background workers against Postgres and LocalStack", () => {
     SCENARIO_TIMEOUT_MS,
   );
 });
+
+function telemetry(): { logger: RecordingLogger; metrics: RecordingMetrics } {
+  return { logger: new RecordingLogger(), metrics: new RecordingMetrics() };
+}

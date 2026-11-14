@@ -2,7 +2,7 @@ import { AbandonWagerMessageUseCase } from "../../src/application/abandon-wager-
 import { ConsumeWagerMessageUseCase } from "../../src/application/consume-wager-message/consume-wager-message.use-case";
 import type { ReceivedMessage } from "../../src/application/ports/message-queue";
 import { WagerMessageConsumer } from "../../src/interfaces/sqs/wager-message.consumer";
-import { RecordingLogger, RecordingMessageQueue } from "./fakes";
+import { RecordingLogger, RecordingMessageQueue, RecordingMetrics } from "./fakes";
 import { createSubmitFixture, type SubmitFixture } from "./submit-fixture";
 
 export const QUEUE = "wager-transactions.fifo";
@@ -11,6 +11,7 @@ export const DLQ = "wager-transactions-dlq.fifo";
 export interface ConsumerFixture {
   submit: SubmitFixture;
   logger: RecordingLogger;
+  metrics: RecordingMetrics;
   queue: RecordingMessageQueue;
   consumer: WagerMessageConsumer;
   message(data?: Record<string, unknown>, receiveCount?: number): ReceivedMessage;
@@ -20,6 +21,7 @@ export async function createConsumerFixture(balance = "100.00"): Promise<Consume
   const submit = await createSubmitFixture(balance);
   const queue = new RecordingMessageQueue();
   const logger = new RecordingLogger();
+  const metrics = new RecordingMetrics();
   const consumer = new WagerMessageConsumer(
     {
       queue,
@@ -27,6 +29,7 @@ export async function createConsumerFixture(balance = "100.00"): Promise<Consume
       abandon: new AbandonWagerMessageUseCase(submit.unitOfWork, submit.clock, submit.ids),
       clock: submit.clock,
       logger,
+      metrics,
     },
     {
       queueName: QUEUE,
@@ -38,6 +41,7 @@ export async function createConsumerFixture(balance = "100.00"): Promise<Consume
   return {
     submit,
     logger,
+    metrics,
     queue,
     consumer,
     message(data = {}, receiveCount = 1) {

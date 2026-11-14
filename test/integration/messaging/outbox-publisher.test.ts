@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { RecordingLogger, RecordingMetrics } from "../../support/fakes";
 import { CreateQueueCommand, DeleteQueueCommand } from "@aws-sdk/client-sqs";
 import { PublishOutboxBatchUseCase } from "../../../src/application/publish-outbox/publish-outbox-batch.use-case";
 import { SubmitWagerTransactionUseCase } from "../../../src/application/submit-wager-transaction/submit-wager-transaction.use-case";
@@ -60,10 +61,16 @@ describe("outbox publisher against Postgres and LocalStack", () => {
       referenceExternalTransactionId: null,
       context: { correlationId: "corr-publish", causationId: null },
     });
-    const publisher = new PublishOutboxBatchUseCase(unitOfWork, queue, clock, {
-      eventsQueue,
-      batchSize: 50,
-    });
+    const publisher = new PublishOutboxBatchUseCase(
+      unitOfWork,
+      queue,
+      clock,
+      {
+        eventsQueue,
+        batchSize: 50,
+      },
+      telemetry(),
+    );
 
     const result = await publisher.execute();
     const received = await receiveAll();
@@ -79,3 +86,7 @@ describe("outbox publisher against Postgres and LocalStack", () => {
     expect(await publisher.execute()).toEqual({ published: 0, failed: 0 });
   });
 });
+
+function telemetry(): { logger: RecordingLogger; metrics: RecordingMetrics } {
+  return { logger: new RecordingLogger(), metrics: new RecordingMetrics() };
+}

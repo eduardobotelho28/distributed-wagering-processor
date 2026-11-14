@@ -14,6 +14,7 @@ const ALLOWED_FIELDS: ReadonlySet<string> = new Set([
   "providerId",
   "eventId",
   "eventType",
+  "aggregateId",
   "worker",
   "error",
   "code",

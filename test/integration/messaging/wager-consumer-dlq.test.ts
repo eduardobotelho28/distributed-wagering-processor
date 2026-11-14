@@ -16,7 +16,7 @@ import { WagerTransactionSchema } from "../../../src/infrastructure/persistence/
 import { SystemClock } from "../../../src/infrastructure/time/system-clock";
 import { UuidV7IdGenerator } from "../../../src/infrastructure/time/uuid-v7-id-generator";
 import { WagerMessageConsumer } from "../../../src/interfaces/sqs/wager-message.consumer";
-import { RecordingLogger } from "../../support/fakes";
+import { RecordingLogger, RecordingMetrics } from "../../support/fakes";
 import { createTestDatabase, type TestDatabase } from "../../support/test-database";
 
 const suffix = crypto.randomUUID();
@@ -60,6 +60,7 @@ function consumerWith(processing: UnitOfWork, maxReceives: number): WagerMessage
       abandon: new AbandonWagerMessageUseCase(real, clock, ids),
       clock,
       logger: new RecordingLogger(),
+      metrics: new RecordingMetrics(),
     },
     {
       queueName: mainQueue,
