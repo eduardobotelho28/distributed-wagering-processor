@@ -420,7 +420,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
 - [x] **T90 Two publishers, same outbox** (3b9b4dd)
   Done when: no event lost; duplicates (if any) are safe by `eventId`.
 
-- [ ] **T91 Reversal before reference**
+- [x] **T91 Reversal before reference** (5bedbda)
   ROLLBACK and REFUND delivered before their BET, in parallel with the BET.
   Done when: final state correct and single-reversal rule holds under race.
 
