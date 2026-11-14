@@ -237,7 +237,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   `GetWallet`, `GetLedger`, `GetTransactionById`, `GetTransactionByProviderExternalId`.
   Done when: unit tests.
 
-- [ ] **T49 [CORE] SubmitWagerTransaction: skeleton and idempotency**
+- [x] **T49 [CORE] SubmitWagerTransaction: skeleton and idempotency** (adfb2de)
   Inside UnitOfWork: lock wallet first, then lookup by idempotency key. Same key + same hash -> return stored result with `idempotentReplay: true` (using stored `resulting_balance`). Same key + different hash -> idempotency conflict. Add `// DECISION:` comment on lock-before-lookup.
   Done when: tests for first call, replay, conflict.
 
