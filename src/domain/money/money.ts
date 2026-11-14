@@ -43,8 +43,9 @@ export class Money {
     return new Money(this.value.plus(other.value), this.currency);
   }
 
-  // DECISION: subtract pode gerar Money negativo. Quem decide se saldo negativo é permitido é a Wallet,
-  // não o value object. INVARIANT: balance >= 0 é garantido pela Wallet e pelo CHECK no banco.
+  // decidi aqui que o subtract pode gerar Money negativo. Quem decide se saldo negativo é permitido é a Wallet,
+  // não o value object, segundo o princípio de responsabilidade única. O value object só garante que a operação seja válida, ou seja, que as moedas sejam iguais.
+  // balance >= 0 é garantido pela Wallet e pelo CHECK no banco.
   subtract(other: Money): Money {
     this.assertSameCurrency(other);
     return new Money(this.value.minus(other.value), this.currency);
