@@ -32,6 +32,8 @@ export function asRecorded(useCase: SubmitWagerTransactionUseCase): RecordedSubm
 
 export interface SubmitFixture {
   unitOfWork: InMemoryUnitOfWork;
+  clock: FixedClock;
+  ids: SequentialIdGenerator;
   useCase: RecordedSubmitter;
   rawUseCase: SubmitWagerTransactionUseCase;
   wallet: Wallet;
@@ -53,6 +55,8 @@ export async function createSubmitFixture(initialBalance = "100.00"): Promise<Su
   const rawUseCase = new SubmitWagerTransactionUseCase(unitOfWork, clock, ids);
   return {
     unitOfWork,
+    clock,
+    ids,
     wallet,
     rawUseCase,
     useCase: asRecorded(rawUseCase),

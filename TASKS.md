@@ -273,11 +273,11 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   Fill gaps: currency conflict, `OPENING` from outside rejected, payload validation at the use case boundary, FAILED path for permanent infra error.
   Done when: every `FailureCode` is produced by at least one test.
 
-- [ ] **T58 [CORE] ReprocessPendingReference use case**
+- [x] **T58 [CORE] ReprocessPendingReference use case** (04809d3)
   For one due transaction: retry resolution. Resolved -> process normally. Still missing and attempts/TTL exhausted -> REJECTED `REFERENCE_NOT_FOUND` + `WagerTransactionRejected` event. Else schedule next attempt with exponential backoff. Choose limits (suggested: max 8 attempts, base 5s, cap 5min, TTL 1h) and justify with a `// DECISION:` comment.
   Done when: tests for the three outcomes.
 
-- [ ] **T59 ReconcileWallet**
+- [x] **T59 ReconcileWallet** (36dc680)
   Recompute balance from ledger, compare with stored, return the README response shape. On divergence: log at error level, increment a metric, `consistent: false`. Never fix silently.
   Done when: test with a deliberately corrupted balance.
 

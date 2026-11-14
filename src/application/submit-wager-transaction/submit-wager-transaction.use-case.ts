@@ -6,12 +6,9 @@ import { InvalidMoneyError } from "../../domain/money/invalid-money.error";
 import { InsufficientFundsError } from "../../domain/wallet/insufficient-funds.error";
 import type { Money } from "../../domain/money/money";
 import { computePayloadHash } from "../../domain/transaction/payload-hash";
-import { checkReversal } from "../../domain/transaction/reversal-policy";
 import type { TransactionKind } from "../../domain/transaction/transaction-kind";
 import { TransactionStatus } from "../../domain/transaction/transaction-status";
 import { WagerTransaction } from "../../domain/transaction/wager-transaction";
-import type { Wallet } from "../../domain/wallet/wallet";
-import { LedgerDirection } from "../../domain/wallet/wallet-ledger-entry";
 import type { Clock } from "../ports/clock";
 import { DuplicateIdempotencyKeyError } from "../ports/duplicate-idempotency-key.error";
 import type { EventContext } from "../ports/event-context";
@@ -22,7 +19,14 @@ import type {
 } from "../ports/repositories";
 import type { RecordedSubmitResult, SubmitResult } from "../ports/submit-result";
 import type { TransactionalRepositories, UnitOfWork } from "../ports/unit-of-work";
-import { SubmissionEvents } from "./submission-events";
+import { nextPendingAttemptAt } from "../wager-processing/pending-reference-policy";
+import { SubmissionEvents } from "../wager-processing/submission-events";
+import {
+  processTransaction,
+  rejectTransaction,
+  requireReferenceExternalId,
+  settled,
+} from "../wager-processing/transaction-processor";
 import { validateSubmission } from "./validate-submission";
 
 export interface SubmitWagerTransactionInput {
@@ -37,19 +41,6 @@ export interface SubmitWagerTransactionInput {
   money: Money;
   referenceExternalTransactionId: string | null;
   context: EventContext;
-}
-
-interface Submission {
-  repositories: TransactionalRepositories;
-  transaction: WagerTransaction;
-  wallet: Wallet;
-  events: SubmissionEvents;
-}
-
-interface Movement {
-  direction: LedgerDirection;
-  referenceTransactionId: string | null;
-  overdraftCode: FailureCode;
 }
 
 export class SubmitWagerTransactionUseCase {
@@ -119,10 +110,19 @@ export class SubmitWagerTransactionUseCase {
       const now = this.clock.now();
       const transaction = this.buildTransaction(input, payloadHash, now);
       const events = new SubmissionEvents(repositories.outbox, this.ids, input.context, now);
+      const save = (stored: WagerTransaction, state: WagerTransactionPersistenceState) =>
+        repositories.transactions.insert(stored, state);
       if (wallet === null) {
-        return reject(repositories, events, transaction, FailureCode.WALLET_NOT_FOUND, null);
+        return rejectTransaction({ transaction, events, save }, FailureCode.WALLET_NOT_FOUND, null);
       }
-      return this.process({ repositories, transaction, wallet, events });
+      return processTransaction({
+        repositories,
+        transaction,
+        wallet,
+        events,
+        save,
+        onUnresolvedReference: () => pendReference(repositories, transaction, events),
+      });
     });
   }
 
@@ -147,147 +147,21 @@ export class SubmitWagerTransactionUseCase {
       createdAt: now,
     });
   }
-
-  private async process(submission: Submission): Promise<RecordedSubmitResult> {
-    const { repositories, transaction, wallet, events } = submission;
-    if (transaction.money.currency !== wallet.currency) {
-      return reject(
-        repositories,
-        events,
-        transaction,
-        FailureCode.CURRENCY_MISMATCH,
-        wallet.balance,
-      );
-    }
-    if (!transaction.affectsBalance()) return this.recordWithoutMovement(submission);
-    if (transaction.requiresReference()) return this.processReversal(submission);
-    return this.applyMovement(submission, {
-      direction: transaction.ledgerDirectionFor(),
-      referenceTransactionId: null,
-      overdraftCode: FailureCode.INSUFFICIENT_FUNDS,
-    });
-  }
-
-  // INVARIANT: transação, lançamento e saldo são gravados na mesma transação SQL do lock.
-  // INVARIANT: débito sem saldo vira REJECTED antes de tocar a carteira; o saldo nunca fica
-  // negativo (também barrado por Wallet.debit e pelo CHECK balance >= 0).
-  private async applyMovement(
-    submission: Submission,
-    movement: Movement,
-  ): Promise<RecordedSubmitResult> {
-    const { repositories, transaction, wallet, events } = submission;
-    const { direction, referenceTransactionId, overdraftCode } = movement;
-    const now = events.now;
-    if (direction === LedgerDirection.DEBIT && wallet.balance.isLessThan(transaction.money)) {
-      return reject(repositories, events, transaction, overdraftCode, wallet.balance);
-    }
-    const entry =
-      direction === LedgerDirection.DEBIT
-        ? wallet.debit(transaction.money, transaction.id, now)
-        : wallet.credit(transaction.money, transaction.id, now);
-    transaction.markProcessed(now, referenceTransactionId);
-    await repositories.transactions.insert(transaction, settled(wallet.balance));
-    await repositories.ledger.insert(entry);
-    await repositories.wallets.saveBalance(wallet, now);
-    await events.processed(transaction, wallet.balance);
-    await events.balanceChanged(entry);
-    return processed(transaction, wallet.balance);
-  }
-
-  private async processReversal(submission: Submission): Promise<RecordedSubmitResult> {
-    const { repositories, transaction, wallet, events } = submission;
-    const reference = await repositories.transactions.findByProviderAndExternalId(
-      transaction.providerId,
-      requireReferenceExternalId(transaction),
-    );
-    if (reference === null || isUnresolved(reference)) return this.pendReference(submission);
-    const verdict = checkReversal(transaction, reference);
-    if (!verdict.ok) {
-      return reject(repositories, events, transaction, verdict.failureCode, wallet.balance);
-    }
-    // INVARIANT: também garantido pelo índice único parcial de reversão (migration T35);
-    // esta consulta só transforma a violação em REJECTED auditável.
-    if ((await repositories.transactions.findProcessedReversalOf(reference.id)) !== null) {
-      const code = FailureCode.REFERENCE_ALREADY_REVERSED;
-      return reject(repositories, events, transaction, code, wallet.balance);
-    }
-    return this.applyMovement(submission, {
-      direction: transaction.ledgerDirectionFor(reference),
-      referenceTransactionId: reference.id,
-      overdraftCode: FailureCode.REVERSAL_WOULD_OVERDRAW,
-    });
-  }
-
-  private async pendReference(submission: Submission): Promise<RecordedSubmitResult> {
-    const { repositories, transaction, events } = submission;
-    const now = events.now;
-    transaction.markPendingReference();
-    await repositories.transactions.insert(transaction, {
-      resultingBalance: null,
-      pendingAttempts: 0,
-      nextAttemptAt: new Date(now.getTime() + PENDING_REFERENCE_FIRST_RETRY_MS),
-    });
-    await events.pendingReference(transaction, requireReferenceExternalId(transaction));
-    return { outcome: "pendingReference", transactionId: transaction.id, idempotentReplay: false };
-  }
-
-  // DECISION: LOSS fecha a rodada sem lançamento; o débito já ocorreu no BET. O saldo
-  // resultante gravado é o atual, para o replay responder o mesmo valor.
-  private async recordWithoutMovement(submission: Submission): Promise<RecordedSubmitResult> {
-    const { repositories, transaction, wallet, events } = submission;
-    transaction.markProcessed(events.now, null);
-    await repositories.transactions.insert(transaction, settled(wallet.balance));
-    await events.processed(transaction, wallet.balance);
-    return processed(transaction, wallet.balance);
-  }
 }
 
-async function reject(
+async function pendReference(
   repositories: TransactionalRepositories,
-  events: SubmissionEvents,
   transaction: WagerTransaction,
-  failureCode: FailureCode,
-  balance: Money | null,
+  events: SubmissionEvents,
 ): Promise<RecordedSubmitResult> {
-  transaction.reject(failureCode);
-  await repositories.transactions.insert(transaction, settled(balance));
-  await events.rejected(transaction, failureCode);
-  return {
-    outcome: "rejected",
-    transactionId: transaction.id,
-    failureCode,
-    balance,
-    idempotentReplay: false,
-  };
-}
-
-// DECISION: primeira retentativa 5s depois; é a base do backoff do reprocessamento (T58).
-// Referência que chega fora de ordem costuma chegar em segundos.
-export const PENDING_REFERENCE_FIRST_RETRY_MS = 5_000;
-
-const UNRESOLVED_STATUSES: ReadonlySet<TransactionStatus> = new Set([
-  TransactionStatus.PENDING,
-  TransactionStatus.PENDING_REFERENCE,
-]);
-
-// DECISION: referência ainda pendente é tratada como ausente; reverter algo que não moveu
-// saldo seria incorreto, e ela pode se resolver depois.
-function isUnresolved(reference: WagerTransaction): boolean {
-  return UNRESOLVED_STATUSES.has(reference.status);
-}
-
-function requireReferenceExternalId(transaction: WagerTransaction): string {
-  const referenceId = transaction.referenceExternalTransactionId;
-  if (referenceId === null) throw new InvariantViolationError("reversal without reference");
-  return referenceId;
-}
-
-function settled(resultingBalance: Money | null): WagerTransactionPersistenceState {
-  return { resultingBalance, pendingAttempts: 0, nextAttemptAt: null };
-}
-
-function processed(transaction: WagerTransaction, balance: Money): RecordedSubmitResult {
-  return { outcome: "processed", transactionId: transaction.id, balance, idempotentReplay: false };
+  transaction.markPendingReference();
+  await repositories.transactions.insert(transaction, {
+    resultingBalance: null,
+    pendingAttempts: 0,
+    nextAttemptAt: nextPendingAttemptAt(0, events.now),
+  });
+  await events.pendingReference(transaction, requireReferenceExternalId(transaction));
+  return { outcome: "pendingReference", transactionId: transaction.id, idempotentReplay: false };
 }
 
 // DECISION: o replay responde com o saldo gravado em resulting_balance no momento do
