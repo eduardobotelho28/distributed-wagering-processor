@@ -367,7 +367,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   Run publisher and pending-reference worker on intervals from config, safe with N instances (no leader election; SKIP LOCKED is the coordination). No overlapping runs inside one process.
   Done when: two instances in compose do not double-process.
 
-- [ ] **T79 Pending reference worker**
+- [x] **T79 Pending reference worker** (9bb5ac0)
   Picks due `PENDING_REFERENCE` rows with SKIP LOCKED, calls `ReprocessPendingReference`.
   Done when: integration test: ROLLBACK first, BET later, ROLLBACK ends PROCESSED.
 
