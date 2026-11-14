@@ -11,7 +11,7 @@ export interface WagerTransactionPersistenceState {
   nextAttemptAt: Date | null;
 }
 
-const EMPTY_PERSISTENCE_STATE: WagerTransactionPersistenceState = {
+export const EMPTY_PERSISTENCE_STATE: WagerTransactionPersistenceState = {
   resultingBalance: null,
   pendingAttempts: 0,
   nextAttemptAt: null,
@@ -37,6 +37,20 @@ export function wagerTransactionToDomain(model: WagerTransactionModel): WagerTra
     processedAt: model.processedAt ?? null,
     createdAt: model.createdAt,
   });
+}
+
+export function wagerTransactionStateOf(
+  model: WagerTransactionModel,
+): WagerTransactionPersistenceState {
+  const resultingBalance = model.resultingBalance ?? null;
+  return {
+    resultingBalance:
+      resultingBalance === null
+        ? null
+        : moneyFromColumns({ amount: resultingBalance, currency: model.currency }),
+    pendingAttempts: model.pendingAttempts,
+    nextAttemptAt: model.nextAttemptAt ?? null,
+  };
 }
 
 export function wagerTransactionToModel(
