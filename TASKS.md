@@ -417,7 +417,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   `kill -9` after commit; message redelivered; no duplicate effect.
   Done when: green.
 
-- [ ] **T90 Two publishers, same outbox**
+- [x] **T90 Two publishers, same outbox** (3b9b4dd)
   Done when: no event lost; duplicates (if any) are safe by `eventId`.
 
 - [ ] **T91 Reversal before reference**
