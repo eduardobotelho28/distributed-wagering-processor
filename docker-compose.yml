@@ -13,5 +13,23 @@ services:
       retries: 10
       start_period: 10s
 
+  localstack:
+    # DECISION: pinned to 3.8. Newer LocalStack images require an auth token,
+    # and the challenge must run with `docker compose up` and nothing else.
+    image: localstack/localstack:3.8
+    environment:
+      SERVICES: sqs
+      AWS_DEFAULT_REGION: ${AWS_REGION:-us-east-1}
+    ports:
+      - "${LOCALSTACK_PORT:-4566}:4566"
+    healthcheck:
+      # DECISION: check that SQS itself is up, not only the gateway.
+      # /_localstack/health returns 200 before services finish starting.
+      test: ["CMD-SHELL", "curl -fs http://localhost:4566/_localstack/health | grep -Eq '\"sqs\": \"(available|running)\"'"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+
 volumes:
   postgres-data:
