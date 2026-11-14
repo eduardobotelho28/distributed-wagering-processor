@@ -1,4 +1,4 @@
-// DECISION: erro de programação (exceção), não rejeição de negócio. Uma transição inválida
+// isto é um erro de programação (exceção), não rejeição de negócio. Uma transição inválida
 // indica bug no fluxo; rejeições de negócio viram resultado com FailureCode.
 export class InvalidTransactionStateError extends Error {
   readonly code = "INVALID_TRANSACTION_STATE";
