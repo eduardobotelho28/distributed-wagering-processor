@@ -133,7 +133,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   `ledgerDirectionFor(reference?)`: BET debit; WIN, REFUND credit; ROLLBACK inverse of the reference (reference BET -> credit, WIN -> debit, REFUND -> debit). `matchesPayload(hash)`.
   Done when: table-driven test covers every ROLLBACK reference kind.
 
-- [ ] **T25 Canonical payload hash**
+- [x] **T25 Canonical payload hash**
   Pure function: canonical JSON (recursively sorted keys, no whitespace) of business fields only (`providerId, externalTransactionId, playerId, walletId, roundId, gameId, kind, money`), sha256 hex. Header and transport metadata excluded. Document the algorithm in a comment.
   Done when: key order does not change the hash; changing amount changes it; extra transport fields do not.
 
