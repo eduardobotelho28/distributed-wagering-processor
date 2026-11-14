@@ -67,7 +67,7 @@ describe("integration events", () => {
       balanceBefore: brl("1.00"),
       balanceAfter: brl("2.00"),
     });
-    const message = OutboxMessage.enqueue(event);
+    const message = OutboxMessage.enqueue(event, "aggregate-1");
     expect(message.eventType).toBe("WalletBalanceChanged");
     expect(message.payload).toEqual({ ...event.toJSON() });
   });

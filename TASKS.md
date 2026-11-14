@@ -189,35 +189,35 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   Custom type or mapper: `numeric` string + `currency` column <-> `Money`. Postgres returns `numeric` as string, never parse to number.
   Done when: roundtrip test for `"0.10"`, `"1234567.89"`.
 
-- [ ] **T38 Persistence models and mappers**
+- [x] **T38 Persistence models and mappers** (70f3ac1)
   ORM entities live in `infrastructure` only. Mappers convert model <-> domain via `rehydrate`. Domain classes get no decorators.
   Done when: mapper tests for wallet, transaction, ledger entry.
 
-- [ ] **T39 Test harness and invariant checker**
+- [x] **T39 Test harness and invariant checker** (a4519b9)
   Integration helpers: fresh schema per suite, factories, and `assertLedgerInvariant(walletId)`: wallet balance == sum of credits - debits, each entry balanced, entries chain correctly. Reused by every later test.
   Done when: helper has its own test.
 
-- [ ] **T40 [CORE] WalletRepository**
+- [x] **T40 [CORE] WalletRepository** (470ada8)
   `findByIdForUpdate` (PESSIMISTIC_WRITE), `findById`, `findByPlayerAndCurrency`, `insert`, `saveBalance` (updates balance, version, updated_at).
   Done when: integration test proves a second transaction blocks on the lock.
 
-- [ ] **T41 WagerTransactionRepository**
+- [x] **T41 WagerTransactionRepository** (2bc867a)
   `insert`, `findById`, `findByIdempotencyKey`, `findByProviderAndExternalId`, `update`, `findDuePendingReferenceForUpdateSkipLocked(limit)`, `findProcessedReversalOf(referenceId)`.
   Done when: integration tests cover each query.
 
-- [ ] **T42 LedgerRepository**
+- [x] **T42 LedgerRepository** (d63baf1)
   `insert`, `listByWallet(cursor, limit)` (opaque cursor = base64 of `(created_at, id)`), `sumByWallet`.
   Done when: pagination test with 120 entries, no duplicates or gaps.
 
-- [ ] **T43 Inbox and Outbox repositories**
+- [x] **T43 Inbox and Outbox repositories** (4e4e8bf)
   Inbox: `tryInsert` (`ON CONFLICT DO NOTHING`, returns whether it was new), `markProcessed`. Outbox: `insert`, `lockDueBatchSkipLocked(limit, now)`, `markPublished`, `scheduleRetry`.
   Done when: integration tests, including two concurrent `lockDueBatch` calls returning disjoint rows.
 
-- [ ] **T44 [CORE] UnitOfWork**
+- [x] **T44 [CORE] UnitOfWork** (5103c20)
   Port in `application`; MikroORM implementation wrapping `em.transactional`. Everything inside shares one transaction.
   Done when: test proves rollback of wallet, ledger, inbox and outbox together on a thrown error.
 
-- [ ] **T45 Constraint tests**
+- [x] **T45 Constraint tests** (76f2bbd)
   One integration test per constraint from T31 to T35 (negative balance, duplicate wallet, duplicate idempotency key, duplicate external id, ledger update/delete, second reversal, unbalanced ledger entry).
   Done when: each constraint fails as expected against real Postgres.
 
