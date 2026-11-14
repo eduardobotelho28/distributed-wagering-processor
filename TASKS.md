@@ -371,7 +371,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   Picks due `PENDING_REFERENCE` rows with SKIP LOCKED, calls `ReprocessPendingReference`.
   Done when: integration test: ROLLBACK first, BET later, ROLLBACK ends PROCESSED.
 
-- [ ] **T80 Worker integration tests**
+- [x] **T80 Worker integration tests** (937f06e)
   Two publishers on the same outbox publish each event at least once and never get stuck; exhausted reference ends REJECTED with event.
   Done when: all pass.
 
