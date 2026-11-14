@@ -319,7 +319,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   `/health/live` (process only), `/health/ready` (Postgres + SQS reachable, 503 otherwise). No auth.
   Done when: test stops Postgres and sees 503 on ready, 200 on live.
 
-- [ ] **T69 Auth extension point**
+- [x] **T69 Auth extension point** (d08a815)
   No-op `AuthGuard` applied globally with health excluded, `ProviderIdentityPort` interface, short note in ARCHITECTURE.md draft explaining the chosen design (e.g. Keycloak/OIDC, provider identity from token claim must match `providerId`).
   Done when: guard exists, is wired, documented.
 
