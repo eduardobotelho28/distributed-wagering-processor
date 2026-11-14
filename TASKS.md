@@ -205,7 +205,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   `insert`, `findById`, `findByIdempotencyKey`, `findByProviderAndExternalId`, `update`, `findDuePendingReferenceForUpdateSkipLocked(limit)`, `findProcessedReversalOf(referenceId)`.
   Done when: integration tests cover each query.
 
-- [ ] **T42 LedgerRepository**
+- [x] **T42 LedgerRepository** (d63baf1)
   `insert`, `listByWallet(cursor, limit)` (opaque cursor = base64 of `(created_at, id)`), `sumByWallet`.
   Done when: pagination test with 120 entries, no duplicates or gaps.
 
