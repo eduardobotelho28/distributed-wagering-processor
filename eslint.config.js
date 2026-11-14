@@ -25,6 +25,53 @@ const floatMoneyBans = {
   ],
 };
 
+// DECISION: boundaries enforced with core `no-restricted-imports` regexes instead of
+// eslint-plugin-import/boundaries, to avoid a new dependency. Matching is by path segment,
+// so it catches both relative (`../../infrastructure/x`) and bare (`infrastructure/x`) imports.
+// RISK: a folder inside domain named like another layer would be flagged; we do not create such folders.
+const outerLayerSegment = "(^|/)(application|infrastructure|interfaces)(/|$)";
+const srcRootModule = "(^|/)(app\\.module|main)(\\.ts)?$";
+
+const domainBoundaries = {
+  "no-restricted-imports": [
+    "error",
+    {
+      patterns: [
+        {
+          group: ["@nestjs/*", "@mikro-orm/*"],
+          message: "domain is pure TS: no framework or ORM imports.",
+        },
+        {
+          regex: outerLayerSegment,
+          message: "domain cannot import from outside domain.",
+        },
+        {
+          regex: srcRootModule,
+          message: "domain cannot import from outside domain.",
+        },
+      ],
+    },
+  ],
+};
+
+const applicationBoundaries = {
+  "no-restricted-imports": [
+    "error",
+    {
+      patterns: [
+        {
+          regex: "(^|/)(infrastructure|interfaces)(/|$)",
+          message: "application depends on ports, not on infrastructure or interfaces.",
+        },
+        {
+          regex: srcRootModule,
+          message: "application cannot import the composition root.",
+        },
+      ],
+    },
+  ],
+};
+
 export default tseslint.config(
   { ignores: ["node_modules/**", "dist/**", "coverage/**"] },
   ...tseslint.configs.recommended,
@@ -37,5 +84,13 @@ export default tseslint.config(
   {
     files: ["src/**/*.ts"],
     rules: floatMoneyBans,
+  },
+  {
+    files: ["src/domain/**/*.ts"],
+    rules: domainBoundaries,
+  },
+  {
+    files: ["src/application/**/*.ts"],
+    rules: applicationBoundaries,
   },
 );
