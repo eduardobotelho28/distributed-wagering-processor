@@ -245,7 +245,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   Debit, ledger entry, mark PROCESSED, store `resulting_balance`. Insufficient funds -> REJECTED with `INSUFFICIENT_FUNDS`, no ledger, no balance change.
   Done when: unit tests for both paths.
 
-- [ ] **T51 [CORE] WIN and LOSS**
+- [x] **T51 [CORE] WIN and LOSS** (0f17d48)
   WIN credits. LOSS marks PROCESSED with no ledger, no balance change, no `WalletBalanceChanged`.
   Done when: tests assert no ledger row for LOSS.
 
