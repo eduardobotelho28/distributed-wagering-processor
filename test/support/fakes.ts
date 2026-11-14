@@ -1,3 +1,9 @@
+import type {
+  MessageQueue,
+  OutgoingMessage,
+  ReceivedMessage,
+  ReceiveOptions,
+} from "../../src/application/ports/message-queue";
 import type { LogFields, Logger } from "../../src/application/ports/logger";
 import type { CounterName, Metrics } from "../../src/application/ports/metrics";
 import type { Clock } from "../../src/application/ports/clock";
@@ -199,7 +205,11 @@ export class InMemoryInboxRepository implements InboxRepositoryPort {
     return true;
   }
 
-  async markProcessed(): Promise<void> {}
+  readonly processedIds: string[] = [];
+
+  async markProcessed(message: InboxMessage): Promise<void> {
+    this.processedIds.push(message.messageId);
+  }
 }
 
 export class InMemoryOutboxRepository implements OutboxRepositoryPort {
@@ -253,5 +263,38 @@ export class RecordingMetrics implements Metrics {
 
   increment(name: CounterName): void {
     this.counters.set(name, (this.counters.get(name) ?? 0) + 1);
+  }
+}
+
+export interface QueueCall {
+  action: "ack" | "changeVisibility" | "send";
+  queue: string;
+  receiptHandle?: string;
+  timeoutSeconds?: number;
+  message?: OutgoingMessage;
+}
+
+export class RecordingMessageQueue implements MessageQueue {
+  readonly calls: QueueCall[] = [];
+  readonly pending: ReceivedMessage[] = [];
+
+  async receive(_queue: string, options: ReceiveOptions): Promise<ReceivedMessage[]> {
+    return this.pending.splice(0, options.maxMessages);
+  }
+
+  async ack(queue: string, receiptHandle: string): Promise<void> {
+    this.calls.push({ action: "ack", queue, receiptHandle });
+  }
+
+  async changeVisibility(
+    queue: string,
+    receiptHandle: string,
+    timeoutSeconds: number,
+  ): Promise<void> {
+    this.calls.push({ action: "changeVisibility", queue, receiptHandle, timeoutSeconds });
+  }
+
+  async send(queue: string, message: OutgoingMessage): Promise<void> {
+    this.calls.push({ action: "send", queue, message });
   }
 }
