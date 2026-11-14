@@ -37,7 +37,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   Add `AGENTS.md`, `TASKS.md`, `CLAUDE.md` (single line: `@AGENTS.md`) and `.claude/commands/next.md`.
   Done when: committed on `main`.
 
-- [ ] **T02 Dev Dockerfile**
+- [x] **T02 Dev Dockerfile** (d7ae5bf)
   `Dockerfile` based on `oven/bun:1`, workdir `/app`, install deps, `.dockerignore`.
   Done when: `docker build .` succeeds.
 
