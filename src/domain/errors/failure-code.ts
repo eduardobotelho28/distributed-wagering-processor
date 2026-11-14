@@ -1,6 +1,5 @@
-// DECISION: string enum em vez de union de literais. Os valores são persistidos no banco
+// optei string enum em vez de union de literais. Os valores são persistidos no banco
 // e expostos na API, então precisam ser estáveis e explícitos; o enum dá um único ponto de verdade.
-// INVARIANT: nunca renomear um valor existente; clientes e linhas já gravadas dependem dele.
 export enum FailureCode {
   /** Saldo insuficiente para o débito. Provedor: não reenviar igual; só após novo crédito na carteira. */
   INSUFFICIENT_FUNDS = "INSUFFICIENT_FUNDS",
