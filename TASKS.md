@@ -201,7 +201,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   `findByIdForUpdate` (PESSIMISTIC_WRITE), `findById`, `findByPlayerAndCurrency`, `insert`, `saveBalance` (updates balance, version, updated_at).
   Done when: integration test proves a second transaction blocks on the lock.
 
-- [ ] **T41 WagerTransactionRepository**
+- [x] **T41 WagerTransactionRepository** (2bc867a)
   `insert`, `findById`, `findByIdempotencyKey`, `findByProviderAndExternalId`, `update`, `findDuePendingReferenceForUpdateSkipLocked(limit)`, `findProcessedReversalOf(referenceId)`.
   Done when: integration tests cover each query.
 
