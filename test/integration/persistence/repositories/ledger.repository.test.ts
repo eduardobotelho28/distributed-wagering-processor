@@ -81,25 +81,30 @@ describe("LedgerRepository pagination", () => {
   });
 });
 
-describe("LedgerRepository sum", () => {
-  test("sums credits minus debits to the wallet balance", async () => {
+describe("LedgerRepository summary", () => {
+  test("sums credits and debits separately and counts entries", async () => {
     const em = db.orm.em.fork();
     const wallet = await seedWallet(em, { balance: "10.00" });
     await recordMovement(em, wallet, { kind: TransactionKind.BET, amount: "0.10" });
     await recordMovement(em, wallet, { kind: TransactionKind.WIN, amount: "0.20" });
 
-    const total = await new LedgerRepository(em.fork()).sumByWallet(wallet.id, "BRL");
+    const summary = await new LedgerRepository(em.fork()).summarizeByWallet(wallet.id, "BRL");
 
-    expect(total.toJSON()).toEqual({ amount: "10.10", currency: "BRL" });
+    expect(summary.credits.toJSON().amount).toBe("10.20");
+    expect(summary.debits.toJSON().amount).toBe("0.10");
+    expect(summary.entryCount).toBe(3);
+    expect(summary.credits.subtract(summary.debits).equals(wallet.balance)).toBe(true);
     await assertLedgerInvariant(em, wallet.id);
   });
 
-  test("returns zero for a wallet without entries", async () => {
-    const total = await new LedgerRepository(db.orm.em.fork()).sumByWallet(
+  test("returns zeros for a wallet without entries", async () => {
+    const summary = await new LedgerRepository(db.orm.em.fork()).summarizeByWallet(
       crypto.randomUUID(),
       "BRL",
     );
 
-    expect(total.toJSON()).toEqual({ amount: "0.00", currency: "BRL" });
+    expect(summary.credits.toJSON().amount).toBe("0.00");
+    expect(summary.debits.toJSON().amount).toBe("0.00");
+    expect(summary.entryCount).toBe(0);
   });
 });

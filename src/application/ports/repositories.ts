@@ -56,11 +56,19 @@ export interface LedgerPage {
   nextCursor: string | null;
 }
 
+// DECISION: créditos e débitos separados (ambos >= 0) em vez de uma soma assinada; a
+// diferença é calculada em Money, então até um ledger corrompido é lido sem estourar.
+export interface LedgerSummary {
+  credits: Money;
+  debits: Money;
+  entryCount: number;
+}
+
 export interface LedgerRepositoryPort {
   insert(entry: WalletLedgerEntry): Promise<void>;
   // Lança InvalidLedgerCursorError quando o cursor não foi emitido por esta implementação.
   listByWallet(query: LedgerPageQuery): Promise<LedgerPage>;
-  sumByWallet(walletId: string, currency: string): Promise<Money>;
+  summarizeByWallet(walletId: string, currency: string): Promise<LedgerSummary>;
 }
 
 export interface InboxRepositoryPort {

@@ -1,3 +1,5 @@
+import type { LogFields, Logger } from "../../src/application/ports/logger";
+import type { CounterName, Metrics } from "../../src/application/ports/metrics";
 import type { Clock } from "../../src/application/ports/clock";
 import { DuplicateIdempotencyKeyError } from "../../src/application/ports/duplicate-idempotency-key.error";
 import type { IdGenerator } from "../../src/application/ports/id-generator";
@@ -7,6 +9,7 @@ import type {
   LedgerPage,
   LedgerPageQuery,
   LedgerRepositoryPort,
+  LedgerSummary,
   OutboxRepositoryPort,
   StoredWagerTransaction,
   WagerTransactionPersistenceState,
@@ -169,16 +172,17 @@ export class InMemoryLedgerRepository implements LedgerRepositoryPort {
     };
   }
 
-  async sumByWallet(walletId: string, currency: string): Promise<Money> {
-    return this.entries
-      .filter((entry) => entry.walletId === walletId)
-      .reduce(
-        (sum, entry) =>
-          entry.direction === LedgerDirection.CREDIT
-            ? sum.add(entry.amount)
-            : sum.subtract(entry.amount),
-        Money.zero(currency),
-      );
+  async summarizeByWallet(walletId: string, currency: string): Promise<LedgerSummary> {
+    const own = this.entries.filter((entry) => entry.walletId === walletId);
+    const total = (direction: LedgerDirection): Money =>
+      own
+        .filter((entry) => entry.direction === direction)
+        .reduce((sum, entry) => sum.add(entry.amount), Money.zero(currency));
+    return {
+      credits: total(LedgerDirection.CREDIT),
+      debits: total(LedgerDirection.DEBIT),
+      entryCount: own.length,
+    };
   }
 }
 
@@ -233,5 +237,21 @@ export class InMemoryUnitOfWork implements UnitOfWork {
     work: (repositories: TransactionalRepositories) => Promise<TResult>,
   ): Promise<TResult> {
     return work(this.repositories);
+  }
+}
+
+export class RecordingLogger implements Logger {
+  readonly errors: { message: string; fields: LogFields }[] = [];
+
+  error(message: string, fields: LogFields): void {
+    this.errors.push({ message, fields });
+  }
+}
+
+export class RecordingMetrics implements Metrics {
+  readonly counters = new Map<CounterName, number>();
+
+  increment(name: CounterName): void {
+    this.counters.set(name, (this.counters.get(name) ?? 0) + 1);
   }
 }
