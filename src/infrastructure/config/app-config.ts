@@ -10,6 +10,7 @@ export interface AppConfig {
   };
   readonly workers: {
     readonly sqsConsumerEnabled: boolean;
+    readonly backgroundWorkersEnabled: boolean;
     readonly outboxPublishIntervalMs: number;
     readonly pendingReferenceIntervalMs: number;
   };
@@ -103,6 +104,7 @@ export function loadConfig(env: Environment): AppConfig {
     workers: {
       // DECISION: ligado por padrão; os testes e2e HTTP desligam para não disputar a fila real.
       sqsConsumerEnabled: read.boolean("SQS_CONSUMER_ENABLED", true),
+      backgroundWorkersEnabled: read.boolean("BACKGROUND_WORKERS_ENABLED", true),
       outboxPublishIntervalMs: read.positiveInteger("OUTBOX_PUBLISH_INTERVAL_MS", 1000),
       pendingReferenceIntervalMs: read.positiveInteger("PENDING_REFERENCE_INTERVAL_MS", 5000),
     },

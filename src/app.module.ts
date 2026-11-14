@@ -5,6 +5,7 @@ import { DatabaseModule } from "./infrastructure/persistence/database.module";
 import { CoreModule } from "./interfaces/core.module";
 import { HttpModule } from "./interfaces/http/http.module";
 import { SqsConsumerModule } from "./interfaces/sqs/sqs-consumer.module";
+import { WorkersModule } from "./interfaces/workers/workers.module";
 
 @Module({})
 export class AppModule {
@@ -17,6 +18,7 @@ export class AppModule {
         CoreModule,
         HttpModule,
         ...(config.workers.sqsConsumerEnabled ? [SqsConsumerModule] : []),
+        ...(config.workers.backgroundWorkersEnabled ? [WorkersModule] : []),
       ],
     };
   }

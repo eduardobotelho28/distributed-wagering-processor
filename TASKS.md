@@ -359,19 +359,19 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
 
 ## Phase 6: Outbox publisher and workers
 
-- [ ] **T77 [CORE] Outbox publisher**
+- [x] **T77 [CORE] Outbox publisher** (9e2320d)
   Loop: in a transaction `lockDueBatchSkipLocked`, publish to `wager-events`, `markPublished`. Failure -> `scheduleRetry`. Publishing is at-least-once; consumers dedupe by `eventId`. Add `// DECISION:` on at-least-once.
   Done when: unit test with fake queue plus integration test.
 
-- [ ] **T78 Scheduler wiring**
+- [x] **T78 Scheduler wiring** (a5d72f3)
   Run publisher and pending-reference worker on intervals from config, safe with N instances (no leader election; SKIP LOCKED is the coordination). No overlapping runs inside one process.
   Done when: two instances in compose do not double-process.
 
-- [ ] **T79 Pending reference worker**
+- [x] **T79 Pending reference worker** (9bb5ac0)
   Picks due `PENDING_REFERENCE` rows with SKIP LOCKED, calls `ReprocessPendingReference`.
   Done when: integration test: ROLLBACK first, BET later, ROLLBACK ends PROCESSED.
 
-- [ ] **T80 Worker integration tests**
+- [x] **T80 Worker integration tests** (937f06e)
   Two publishers on the same outbox publish each event at least once and never get stuck; exhausted reference ends REJECTED with event.
   Done when: all pass.
 
