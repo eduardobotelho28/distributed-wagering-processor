@@ -265,7 +265,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   Emit `WagerTransactionProcessed` (including LOSS), `WagerTransactionRejected`, `WalletBalanceChanged` (only when balance changes), `WagerTransactionPendingReference`. `correlationId` and `causationId` propagated.
   Done when: tests assert which events exist per kind.
 
-- [ ] **T56 [CORE] Race on idempotency key across wallets**
+- [x] **T56 [CORE] Race on idempotency key across wallets** (7301f51)
   If the insert hits the UNIQUE constraint (same key sent with different wallets in parallel), catch the violation, reload by key, and resolve as replay or conflict.
   Done when: integration test with parallel requests, same key, two wallets.
 
