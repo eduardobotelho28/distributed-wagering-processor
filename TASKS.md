@@ -335,15 +335,15 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   Parse the README message. Invalid or `OPENING` -> classified as permanent (DLQ path). `idempotencyKey` comes from the message.
   Done when: unit tests.
 
-- [ ] **T72 [CORE] Consumer: inbox dedupe + same use case**
+- [x] **T72 [CORE] Consumer: inbox dedupe + same use case** (50e5f11)
   In ONE transaction: `inbox.tryInsert(consumerName, messageId)`; if not new and processed -> ack without effects; else run the same `SubmitWagerTransaction` logic and `markProcessed`. Payload hash stored in inbox.
   Done when: redelivered message produces no second effect.
 
-- [ ] **T73 [CORE] Ack after commit and error classification**
+- [x] **T73 [CORE] Ack after commit and error classification** (fc40825)
   Business outcome (processed/rejected/pending) -> ack. Transient (DB down, lock timeout) -> do not ack, set visibility with backoff. Permanent (malformed, impossible) -> send to DLQ after the limit. Document the classification table.
   Done when: tests per class.
 
-- [ ] **T74 Retry limit and DLQ**
+- [x] **T74 Retry limit and DLQ** (7520ca4)
   Use `ApproximateReceiveCount`; at the limit, move to DLQ with failure reason. Persist a `FAILED` transaction when the transaction identity is known (auditable).
   Done when: integration test ends with the message in DLQ.
 
