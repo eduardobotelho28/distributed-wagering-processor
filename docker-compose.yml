@@ -31,5 +31,22 @@ services:
       retries: 20
       start_period: 10s
 
+  app:
+    build: .
+    env_file: .env
+    # Live source mount + `bun --watch` gives hot reload; the anonymous volume keeps the
+    # image's node_modules (Linux build) instead of the host folder.
+    command: ["bun", "--watch", "src/main.ts"]
+    ports:
+      - "${APP_PORT:-3000}:${APP_PORT:-3000}"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+
 volumes:
   postgres-data:
