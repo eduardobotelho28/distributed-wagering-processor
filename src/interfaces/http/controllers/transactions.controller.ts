@@ -1,5 +1,9 @@
 import { Body, Controller, Get, Headers, Inject, Param, Post, Res } from "@nestjs/common";
 import type { IdGenerator } from "../../../application/ports/id-generator";
+import type { Logger } from "../../../application/ports/logger";
+import type { Metrics } from "../../../application/ports/metrics";
+import { addToLogContext } from "../../../infrastructure/observability/log-context";
+import { recordSubmission, secondsSince } from "../../observability/submission-telemetry";
 import type { GetTransactionResult } from "../../../application/queries/get-transaction-by-id.use-case";
 import type { GetTransactionByIdUseCase } from "../../../application/queries/get-transaction-by-id.use-case";
 import type { GetTransactionByProviderExternalIdUseCase } from "../../../application/queries/get-transaction-by-provider-external-id.use-case";
@@ -35,6 +39,8 @@ export class TransactionsController {
     @Inject(tokens.GET_TRANSACTION_BY_EXTERNAL_ID)
     private readonly getByExternalId: GetTransactionByProviderExternalIdUseCase,
     @Inject(tokens.ID_GENERATOR) private readonly ids: IdGenerator,
+    @Inject(tokens.METRICS) private readonly metrics: Metrics,
+    @Inject(tokens.LOGGER) private readonly logger: Logger,
   ) {}
 
   // DECISION: o status vem do resultado (201/200/202/422/500), então é definido via `Res`
@@ -47,6 +53,8 @@ export class TransactionsController {
     @Res({ passthrough: true }) response: StatusResponse,
   ): Promise<TransactionReplyBody | RejectedReplyBody> {
     const request = parseSubmitTransactionRequest(body, idempotencyKey);
+    addToLogContext({ providerId: request.providerId, walletId: request.walletId });
+    const startedAt = performance.now();
     const result = await this.submit.execute({
       ...request,
       context: {
@@ -54,6 +62,12 @@ export class TransactionsController {
         causationId: null,
       },
     });
+    recordSubmission(
+      { metrics: this.metrics, logger: this.logger },
+      result,
+      "http",
+      secondsSince(startedAt),
+    );
     const reply = submitResultToHttp(result);
     response.status(reply.status);
     return reply.body;

@@ -2,7 +2,13 @@ import { describe, expect, test } from "bun:test";
 import { PublishOutboxBatchUseCase } from "../../../src/application/publish-outbox/publish-outbox-batch.use-case";
 import { OutboxMessage } from "../../../src/domain/outbox/outbox-message";
 import { FIXED_NOW } from "../../support/factories";
-import { FixedClock, InMemoryUnitOfWork, RecordingMessageQueue } from "../../support/fakes";
+import {
+  FixedClock,
+  InMemoryUnitOfWork,
+  RecordingLogger,
+  RecordingMessageQueue,
+  RecordingMetrics,
+} from "../../support/fakes";
 
 const EVENTS = "wager-events";
 
@@ -22,11 +28,16 @@ function setup(batchSize = 10) {
   const unitOfWork = new InMemoryUnitOfWork();
   const queue = new RecordingMessageQueue();
   const clock = new FixedClock(FIXED_NOW);
-  const useCase = new PublishOutboxBatchUseCase(unitOfWork, queue, clock, {
-    eventsQueue: EVENTS,
-    batchSize,
-  });
-  return { unitOfWork, queue, clock, useCase };
+  const logger = new RecordingLogger();
+  const metrics = new RecordingMetrics();
+  const useCase = new PublishOutboxBatchUseCase(
+    unitOfWork,
+    queue,
+    clock,
+    { eventsQueue: EVENTS, batchSize },
+    { logger, metrics },
+  );
+  return { unitOfWork, queue, clock, useCase, logger, metrics };
 }
 
 describe("PublishOutboxBatchUseCase", () => {

@@ -1,7 +1,11 @@
 export type LogFields = Record<string, string | number | boolean>;
 
-// DECISION: port mínimo; a implementação JSON com contexto assíncrono chega na T81.
-// INVARIANT: campos são escalares escolhidos por quem loga; nunca o payload inteiro.
+// DECISION: o chamador passa só campos escalares escolhidos; a implementação ainda filtra por
+// lista de permitidos (T81). O contexto (correlationId, messageId...) é anexado pela
+// implementação, não pelo chamador.
+// INVARIANT: nunca recebe o payload inteiro nem valores monetários além do necessário.
 export interface Logger {
-  error(message: string, fields: LogFields): void;
+  info(message: string, fields?: LogFields): void;
+  warn(message: string, fields?: LogFields): void;
+  error(message: string, fields?: LogFields): void;
 }

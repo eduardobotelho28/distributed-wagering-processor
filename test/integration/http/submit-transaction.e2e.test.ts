@@ -124,3 +124,20 @@ describe("POST /wagering/transactions", () => {
     await assertLedgerInvariant(app.db.orm.em.fork(), walletId);
   });
 });
+
+describe("HTTP observability", () => {
+  test("echoes the correlation id and counts the transaction in /metrics", async () => {
+    const walletId = await createWalletOver(app, "100.00");
+
+    const supplied = await submitTransaction(app, walletId, {
+      headers: { "x-correlation-id": "corr-observed-1" },
+    });
+    const generated = await submitTransaction(app, walletId);
+    const metrics = await (await fetch(`${app.baseUrl}/metrics`)).text();
+
+    expect(supplied.headers.get("x-correlation-id")).toBe("corr-observed-1");
+    expect(generated.headers.get("x-correlation-id")).toMatch(/^[0-9a-f-]{36}$/);
+    expect(metrics).toMatch(/wager_transactions_total\{status="processed",channel="http"\} \d+/);
+    expect(metrics).toContain('wager_processing_duration_seconds_count{channel="http"}');
+  });
+});

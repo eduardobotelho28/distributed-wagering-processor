@@ -1,7 +1,7 @@
 import { MikroORM } from "@mikro-orm/postgresql";
 import { Global, Module, type Provider } from "@nestjs/common";
-import { InMemoryMetrics } from "../infrastructure/observability/in-memory-metrics";
-import { JsonConsoleLogger } from "../infrastructure/observability/json-console-logger";
+import { PrometheusMetrics } from "../infrastructure/observability/prometheus-metrics";
+import { JsonLogger } from "../infrastructure/observability/json-logger";
 import { MikroOrmUnitOfWork } from "../infrastructure/persistence/mikro-orm-unit-of-work";
 import { SystemClock } from "../infrastructure/time/system-clock";
 import { UuidV7IdGenerator } from "../infrastructure/time/uuid-v7-id-generator";
@@ -15,8 +15,9 @@ const providers: Provider[] = [
   },
   { provide: tokens.CLOCK, useValue: new SystemClock() },
   { provide: tokens.ID_GENERATOR, useValue: new UuidV7IdGenerator() },
-  { provide: tokens.LOGGER, useValue: new JsonConsoleLogger() },
-  { provide: tokens.METRICS, useValue: new InMemoryMetrics() },
+  { provide: tokens.LOGGER, useValue: new JsonLogger() },
+  { provide: PrometheusMetrics, useValue: new PrometheusMetrics() },
+  { provide: tokens.METRICS, useExisting: PrometheusMetrics },
 ];
 
 // DECISION: portas compartilhadas por HTTP e consumidor SQS num módulo global; os dois canais
@@ -24,6 +25,13 @@ const providers: Provider[] = [
 @Global()
 @Module({
   providers,
-  exports: [tokens.UNIT_OF_WORK, tokens.CLOCK, tokens.ID_GENERATOR, tokens.LOGGER, tokens.METRICS],
+  exports: [
+    tokens.UNIT_OF_WORK,
+    tokens.CLOCK,
+    tokens.ID_GENERATOR,
+    tokens.LOGGER,
+    tokens.METRICS,
+    PrometheusMetrics,
+  ],
 })
 export class CoreModule {}

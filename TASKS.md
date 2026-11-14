@@ -379,15 +379,15 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
 
 ## Phase 7: Observability
 
-- [ ] **T81 Structured logging**
+- [x] **T81 Structured logging** (af4a545)
   JSON logger, `AsyncLocalStorage` context with `correlationId`, `messageId`, `transactionId`, `walletId`, `providerId`. Redaction: never log full payloads or amounts beyond what is needed.
   Done when: test asserts log shape and absence of payload.
 
-- [ ] **T82 Metrics**
+- [x] **T82 Metrics** (df08106)
   `prom-client`, `/metrics`. Counters/histograms: transactions by status, duplicates detected, retries, DLQ messages, lock conflicts/timeouts, outbox lag, processing latency, reconciliation divergences.
   Done when: each metric is incremented in at least one test.
 
-- [ ] **T83 Wire logs and metrics into flows**
+- [x] **T83 Wire logs and metrics into flows** (7920337)
   HTTP, consumer, publisher, workers.
   Done when: a manual run shows correlated logs across HTTP -> outbox -> publish.
 

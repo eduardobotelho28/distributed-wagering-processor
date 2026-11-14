@@ -1,5 +1,7 @@
 import type { OutboxMessage } from "../../domain/outbox/outbox-message";
 import type { Clock } from "../ports/clock";
+import type { Logger } from "../ports/logger";
+import type { Metrics } from "../ports/metrics";
 import type { MessageQueue } from "../ports/message-queue";
 import type { OutboxRepositoryPort } from "../ports/repositories";
 import type { UnitOfWork } from "../ports/unit-of-work";
@@ -27,6 +29,7 @@ export class PublishOutboxBatchUseCase {
     private readonly queue: MessageQueue,
     private readonly clock: Clock,
     private readonly options: PublishOutboxOptions,
+    private readonly telemetry: { logger: Logger; metrics: Metrics },
   ) {}
 
   execute(): Promise<PublishOutboxResult> {
@@ -49,9 +52,28 @@ export class PublishOutboxBatchUseCase {
     try {
       await this.queue.send(this.options.eventsQueue, { body: JSON.stringify(message.payload) });
       return true;
-    } catch {
+    } catch (error) {
+      this.telemetry.metrics.increment("retries_total", { kind: "outbox_publish" });
+      this.telemetry.logger.warn("outbox event publish failed, will retry", {
+        eventId: message.id,
+        error: error instanceof Error ? error.name : "unknown",
+      });
       return false;
     }
+  }
+
+  // DECISION: o correlationId vem do envelope gravado; é ele que liga o log da requisição HTTP
+  // (ou da mensagem SQS) ao log da publicação, em outro processo e outro momento.
+  private recordPublished(message: OutboxMessage, now: Date): void {
+    const lagSeconds = Math.max(now.getTime() - message.occurredAt.getTime(), 0) / 1000;
+    this.telemetry.metrics.observe("outbox_publish_lag_seconds", lagSeconds, {});
+    const correlationId = message.payload.correlationId;
+    this.telemetry.logger.info("outbox event published", {
+      eventId: message.id,
+      eventType: message.eventType,
+      aggregateId: message.aggregateId,
+      ...(typeof correlationId === "string" ? { correlationId } : {}),
+    });
   }
 
   private async record(
@@ -63,6 +85,7 @@ export class PublishOutboxBatchUseCase {
     if (sent) {
       message.markPublished(now);
       await outbox.markPublished(message);
+      this.recordPublished(message, now);
       return;
     }
     message.scheduleRetry(now);

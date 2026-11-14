@@ -13,7 +13,7 @@ import { SystemClock } from "../../src/infrastructure/time/system-clock";
 import { UuidV7IdGenerator } from "../../src/infrastructure/time/uuid-v7-id-generator";
 import { CONSUMER_NAME } from "../../src/interfaces/sqs/sqs-consumer.module";
 import { WagerMessageConsumer } from "../../src/interfaces/sqs/wager-message.consumer";
-import { RecordingLogger } from "./fakes";
+import { RecordingLogger, RecordingMetrics } from "./fakes";
 import type { TestDatabase } from "./test-database";
 
 export interface SqsTestQueues {
@@ -66,6 +66,7 @@ export function consumerFor(
       abandon: new AbandonWagerMessageUseCase(unitOfWork, clock, ids),
       clock,
       logger: new RecordingLogger(),
+      metrics: new RecordingMetrics(),
     },
     {
       queueName: queues.main,

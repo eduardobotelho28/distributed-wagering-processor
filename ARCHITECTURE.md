@@ -38,3 +38,27 @@ porém, está no código e ligado.
 - Mensagens da fila SQS são tratadas como canal interno confiável. A identidade do provedor
   contida na mensagem continua sujeita às mesmas validações de domínio (referência do mesmo
   provedor, mesma carteira e rodada).
+
+## Limitações conhecidas
+
+> Lista viva; consolidada na T98.
+
+### Ordem do ledger depende do relógio da instância
+
+O extrato (`GET /wallets/:id/ledger`) e o encadeamento verificado pelo checker de invariante
+ordenam os lançamentos por `(created_at, id)`. O `created_at` vem do relógio de quem processou.
+
+- **Dentro de uma instância** a ordem é correta: o lock pessimista da carteira serializa as
+  movimentações e o relógio avança.
+- **Com várias instâncias em máquinas com relógios dessincronizados**, dois lançamentos da mesma
+  carteira podem receber `created_at` fora da ordem real em que o lock os serializou. O saldo e a
+  soma do ledger continuam corretos (a reconciliação não acusa divergência), mas o extrato pode
+  listar os lançamentos fora de ordem e o encadeamento `balance_before` → `balance_after`
+  aparenta quebra.
+
+**Mitigação adotada:** nenhuma no código; depende de NTP nas instâncias, o padrão em qualquer
+ambiente gerenciado.
+
+**Correção possível:** gravar em cada lançamento a versão da carteira (número de sequência por
+carteira, já incrementado sob o lock em `Wallet.apply`) com `UNIQUE (wallet_id, wallet_version)`,
+e ordenar extrato e cursor por essa coluna. Exige migration e mudança no cursor opaco.

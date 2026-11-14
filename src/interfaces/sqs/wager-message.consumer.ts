@@ -6,8 +6,16 @@ import type {
 } from "../../application/consume-wager-message/consume-wager-message.use-case";
 import type { Clock } from "../../application/ports/clock";
 import type { Logger } from "../../application/ports/logger";
+import type { Metrics } from "../../application/ports/metrics";
+import { runWithLogContext } from "../../infrastructure/observability/log-context";
+import { lockConflictKind } from "../../infrastructure/persistence/transient-database-error";
+import { recordSubmission, secondsSince } from "../observability/submission-telemetry";
 import type { MessageQueue, ReceivedMessage } from "../../application/ports/message-queue";
-import { parseWagerMessage, type WagerMessage } from "./wager-message.parser";
+import {
+  type ParsedWagerMessage,
+  parseWagerMessage,
+  type WagerMessage,
+} from "./wager-message.parser";
 
 // Tabela de classificação do consumidor (T73/T74):
 //
@@ -84,6 +92,7 @@ export interface ConsumerDependencies {
   abandon: AbandonWagerMessageUseCase;
   clock: Clock;
   logger: Logger;
+  metrics: Metrics;
 }
 
 export class WagerMessageConsumer {
@@ -121,8 +130,25 @@ export class WagerMessageConsumer {
     }
   }
 
-  async handle(received: ReceivedMessage): Promise<Disposition> {
+  // INVARIANT: cada mensagem roda no próprio contexto de log; todo log do processamento
+  // carrega messageId, correlationId, providerId e walletId.
+  handle(received: ReceivedMessage): Promise<Disposition> {
     const parsed = parseWagerMessage(received.body);
+    const context = parsed.ok
+      ? {
+          messageId: parsed.message.messageId,
+          correlationId: parsed.message.messageId,
+          providerId: parsed.message.request.providerId,
+          walletId: parsed.message.request.walletId,
+        }
+      : { messageId: parsed.messageId ?? received.transportId };
+    return runWithLogContext(context, () => this.handleParsed(received, parsed));
+  }
+
+  private async handleParsed(
+    received: ReceivedMessage,
+    parsed: ParsedWagerMessage,
+  ): Promise<Disposition> {
     const disposition = parsed.ok
       ? await this.process(received, parsed.message)
       : deadLetter(parsed.code, parsed.reason);
@@ -133,12 +159,35 @@ export class WagerMessageConsumer {
   private async process(received: ReceivedMessage, message: WagerMessage): Promise<Disposition> {
     const input = this.inputFor(message);
     try {
-      return classifyResult(await this.deps.consume.execute(input));
+      const startedAt = performance.now();
+      const result = await this.deps.consume.execute(input);
+      this.recordConsumed(result, secondsSince(startedAt));
+      return classifyResult(result);
     } catch (error) {
+      this.recordFailure(error, received.receiveCount);
       if (received.receiveCount < this.options.maxReceives) return { kind: "retry", error };
       await this.recordAbandoned(input);
       return deadLetter("RETRIES_EXHAUSTED", "transient failure persisted until the retry limit");
     }
+  }
+
+  private recordConsumed(result: ConsumeWagerMessageResult, durationSeconds: number): void {
+    if (result.outcome === "duplicate") {
+      this.deps.metrics.increment("duplicates_detected_total", { source: "inbox" });
+      this.deps.logger.info("duplicate wager message acknowledged");
+      return;
+    }
+    recordSubmission(this.deps, result.result, "sqs", durationSeconds);
+  }
+
+  private recordFailure(error: unknown, receiveCount: number): void {
+    const conflict = lockConflictKind(error);
+    if (conflict !== null) this.deps.metrics.increment("lock_conflicts_total", { kind: conflict });
+    this.deps.metrics.increment("retries_total", { kind: "sqs_message" });
+    this.deps.logger.warn("wager message failed, will retry", {
+      receiveCount,
+      error: error instanceof Error ? error.name : "unknown",
+    });
   }
 
   private inputFor(message: WagerMessage): ConsumeWagerMessageInput {
@@ -206,6 +255,7 @@ export class WagerMessageConsumer {
       groupId: message?.request.walletId ?? received.transportId,
       deduplicationId: received.transportId,
     });
+    this.deps.metrics.increment("dlq_messages_total", { code: disposition.code });
     this.deps.logger.error("wager message moved to dead-letter queue", {
       messageId: envelope.messageId ?? received.transportId,
       code: disposition.code,

@@ -9,6 +9,7 @@ import {
 import type { Clock } from "../../application/ports/clock";
 import type { IdGenerator } from "../../application/ports/id-generator";
 import type { Logger } from "../../application/ports/logger";
+import type { Metrics } from "../../application/ports/metrics";
 import type { UnitOfWork } from "../../application/ports/unit-of-work";
 import { PublishOutboxBatchUseCase } from "../../application/publish-outbox/publish-outbox-batch.use-case";
 import { ReprocessPendingReferenceUseCase } from "../../application/reprocess-pending-reference/reprocess-pending-reference.use-case";
@@ -28,6 +29,7 @@ function buildWorkers(
   clock: Clock,
   ids: IdGenerator,
   logger: Logger,
+  metrics: Metrics,
 ): IntervalWorker[] {
   const reprocess = new ReprocessPendingReferenceUseCase(unitOfWork, clock, ids);
   const publisher = new PublishOutboxBatchUseCase(
@@ -35,6 +37,7 @@ function buildWorkers(
     new SqsMessageQueue(createSqsClient(config.sqs)),
     clock,
     { eventsQueue: config.sqs.eventsQueue, batchSize: config.limits.outboxBatchSize },
+    { logger, metrics },
   );
   return [
     new IntervalWorker(
@@ -43,7 +46,11 @@ function buildWorkers(
       logger,
     ),
     new IntervalWorker(
-      () => drainPendingReferences(reprocess, config.limits.pendingReferenceBatchSize),
+      () =>
+        drainPendingReferences(reprocess, config.limits.pendingReferenceBatchSize, {
+          logger,
+          metrics,
+        }),
       { name: "pending-reference", intervalMs: config.workers.pendingReferenceIntervalMs },
       logger,
     ),
@@ -70,7 +77,14 @@ const providers: Provider[] = [
   {
     provide: BACKGROUND_WORKERS,
     useFactory: buildWorkers,
-    inject: [APP_CONFIG, tokens.UNIT_OF_WORK, tokens.CLOCK, tokens.ID_GENERATOR, tokens.LOGGER],
+    inject: [
+      APP_CONFIG,
+      tokens.UNIT_OF_WORK,
+      tokens.CLOCK,
+      tokens.ID_GENERATOR,
+      tokens.LOGGER,
+      tokens.METRICS,
+    ],
   },
   WorkersLifecycle,
 ];
