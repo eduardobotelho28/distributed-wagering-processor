@@ -399,7 +399,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   Helper to start N app processes (separate Bun processes or compose scale) against the same Postgres/LocalStack, wait for ready, stop them.
   Done when: harness boots 3 instances.
 
-- [ ] **T85 Same bet 50x in parallel**
+- [x] **T85 Same bet 50x in parallel** (f41c81a)
   Done when: exactly one debit, 49 replays, invariant holds.
 
 - [ ] **T86 Mandatory scenario**
