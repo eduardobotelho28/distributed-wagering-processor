@@ -31,7 +31,7 @@ export interface WagerTransactionRepositoryPort {
   insert(transaction: WagerTransaction, state?: WagerTransactionPersistenceState): Promise<void>;
   update(transaction: WagerTransaction, state?: WagerTransactionPersistenceState): Promise<void>;
   findById(id: string): Promise<WagerTransaction | null>;
-  findByIdempotencyKey(idempotencyKey: string): Promise<WagerTransaction | null>;
+  findByIdempotencyKey(idempotencyKey: string): Promise<StoredWagerTransaction | null>;
   findByProviderAndExternalId(
     providerId: string,
     externalTransactionId: string,

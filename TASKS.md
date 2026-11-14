@@ -237,27 +237,27 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   `GetWallet`, `GetLedger`, `GetTransactionById`, `GetTransactionByProviderExternalId`.
   Done when: unit tests.
 
-- [ ] **T49 [CORE] SubmitWagerTransaction: skeleton and idempotency**
+- [x] **T49 [CORE] SubmitWagerTransaction: skeleton and idempotency** (adfb2de)
   Inside UnitOfWork: lock wallet first, then lookup by idempotency key. Same key + same hash -> return stored result with `idempotentReplay: true` (using stored `resulting_balance`). Same key + different hash -> idempotency conflict. Add `// DECISION:` comment on lock-before-lookup.
   Done when: tests for first call, replay, conflict.
 
-- [ ] **T50 [CORE] BET**
+- [x] **T50 [CORE] BET** (d985b24)
   Debit, ledger entry, mark PROCESSED, store `resulting_balance`. Insufficient funds -> REJECTED with `INSUFFICIENT_FUNDS`, no ledger, no balance change.
   Done when: unit tests for both paths.
 
-- [ ] **T51 [CORE] WIN and LOSS**
+- [x] **T51 [CORE] WIN and LOSS** (0f17d48)
   WIN credits. LOSS marks PROCESSED with no ledger, no balance change, no `WalletBalanceChanged`.
   Done when: tests assert no ledger row for LOSS.
 
-- [ ] **T52 [CORE] REFUND**
+- [x] **T52 [CORE] REFUND** (f6de220)
   Resolve reference by `(providerId, referenceExternalTransactionId)`, apply `ReversalPolicy`, credit. Reference not `PROCESSED` (still pending) is handled like a missing reference.
   Done when: tests for success and each rejection code.
 
-- [ ] **T53 [CORE] ROLLBACK**
+- [x] **T53 [CORE] ROLLBACK** (31fed89)
   Same resolution; direction is the inverse of the reference. If the inverse debit would make the balance negative -> REJECTED with `REVERSAL_WOULD_OVERDRAW`, auditable, no ledger.
   Done when: tests for rollback of BET, WIN and REFUND, plus overdraw.
 
-- [ ] **T54 [CORE] Reference not found -> PENDING_REFERENCE**
+- [x] **T54 [CORE] Reference not found -> PENDING_REFERENCE** (af65fc3)
   Persist as `PENDING_REFERENCE` with `next_attempt_at`, emit `WagerTransactionPendingReference`, return pending result.
   Done when: test covers the persisted state and the event.
 

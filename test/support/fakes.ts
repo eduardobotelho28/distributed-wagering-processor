@@ -97,8 +97,9 @@ export class InMemoryWagerTransactionRepository implements WagerTransactionRepos
     return this.rows.get(id)?.transaction ?? null;
   }
 
-  async findByIdempotencyKey(idempotencyKey: string): Promise<WagerTransaction | null> {
-    return this.find((transaction) => transaction.idempotencyKey === idempotencyKey);
+  async findByIdempotencyKey(idempotencyKey: string): Promise<StoredWagerTransaction | null> {
+    const rows = [...this.rows.values()];
+    return rows.find((row) => row.transaction.idempotencyKey === idempotencyKey) ?? null;
   }
 
   async findByProviderAndExternalId(
