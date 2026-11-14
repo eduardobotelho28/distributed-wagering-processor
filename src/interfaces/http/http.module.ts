@@ -19,6 +19,7 @@ import type { AppConfig } from "../../infrastructure/config/app-config";
 import { APP_CONFIG } from "../../infrastructure/config/app-config.module";
 import { DatabaseHealthCheck } from "../../infrastructure/health/database-health-check";
 import { SqsHealthCheck } from "../../infrastructure/health/sqs-health-check";
+import { createSqsClient } from "../../infrastructure/messaging/sqs-client";
 import { InMemoryMetrics } from "../../infrastructure/observability/in-memory-metrics";
 import { JsonConsoleLogger } from "../../infrastructure/observability/json-console-logger";
 import { MikroOrmUnitOfWork } from "../../infrastructure/persistence/mikro-orm-unit-of-work";
@@ -44,7 +45,7 @@ const infrastructure: Provider[] = [
     provide: tokens.HEALTH_CHECKS,
     useFactory: (orm: MikroORM, config: AppConfig): HealthCheck[] => [
       new DatabaseHealthCheck(orm),
-      new SqsHealthCheck(config.sqs.endpoint),
+      new SqsHealthCheck(createSqsClient(config.sqs), config.sqs.transactionsQueue),
     ],
     inject: [MikroORM, APP_CONFIG],
   },

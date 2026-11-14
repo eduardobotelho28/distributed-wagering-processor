@@ -1,6 +1,6 @@
-import { Money } from "../../../domain/money/money";
-import { InvalidMoneyError } from "../../../domain/money/invalid-money.error";
-import { ApiError } from "../errors/api-error";
+import { Money } from "../../domain/money/money";
+import { InvalidMoneyError } from "../../domain/money/invalid-money.error";
+import { PayloadValidationError } from "./payload-validation.error";
 
 export type JsonObject = Record<string, unknown>;
 
@@ -11,7 +11,7 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
 // DECISION: mensagens citam só o nome do campo, nunca o valor recebido (pode ser dado sensível).
 export function requireObject(value: unknown, name: string): JsonObject {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    throw ApiError.invalidPayload("INVALID_PAYLOAD", `${name} must be a JSON object`);
+    throw new PayloadValidationError("INVALID_PAYLOAD", `${name} must be a JSON object`);
   }
   return Object.fromEntries(Object.entries(value));
 }
@@ -19,10 +19,10 @@ export function requireObject(value: unknown, name: string): JsonObject {
 export function readText(source: JsonObject, field: string): string {
   const value = source[field];
   if (typeof value !== "string" || value.trim() === "") {
-    throw ApiError.invalidPayload("INVALID_FIELD", `${field} must be a non-empty string`);
+    throw new PayloadValidationError("INVALID_FIELD", `${field} must be a non-empty string`);
   }
   if (value.length > MAX_TEXT_LENGTH) {
-    throw ApiError.invalidPayload("INVALID_FIELD", `${field} exceeds ${MAX_TEXT_LENGTH} chars`);
+    throw new PayloadValidationError("INVALID_FIELD", `${field} exceeds ${MAX_TEXT_LENGTH} chars`);
   }
   return value;
 }
@@ -35,7 +35,7 @@ export function readOptionalText(source: JsonObject, field: string): string | nu
 export function readUuid(source: JsonObject, field: string): string {
   const value = readText(source, field);
   if (!UUID_PATTERN.test(value)) {
-    throw ApiError.invalidPayload("INVALID_FIELD", `${field} must be a UUID`);
+    throw new PayloadValidationError("INVALID_FIELD", `${field} must be a UUID`);
   }
   return value.toLowerCase();
 }
@@ -47,7 +47,7 @@ export function readMoney(source: JsonObject, field: string): Money {
     return Money.from({ amount: money.amount, currency: money.currency });
   } catch (error) {
     if (!(error instanceof InvalidMoneyError)) throw error;
-    throw ApiError.invalidPayload(
+    throw new PayloadValidationError(
       "INVALID_MONEY",
       `${field} must be { amount: decimal string with up to 2 places, currency: 3 letters }`,
     );
@@ -62,7 +62,7 @@ export function readEnum<T extends string>(
   const value = source[field];
   const match = allowed.find((candidate) => candidate === value);
   if (match === undefined) {
-    throw ApiError.invalidPayload(
+    throw new PayloadValidationError(
       `INVALID_${field.toUpperCase()}`,
       `${field} must be one of ${allowed.join(", ")}`,
     );

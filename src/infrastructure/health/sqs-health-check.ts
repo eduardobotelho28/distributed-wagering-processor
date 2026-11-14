@@ -1,17 +1,21 @@
+import { GetQueueUrlCommand, type SQSClient } from "@aws-sdk/client-sqs";
 import type { HealthCheck, HealthStatus } from "../../application/ports/health-check";
-import { HEALTH_CHECK_TIMEOUT_MS, withTimeout } from "./with-timeout";
+import { withTimeout } from "./with-timeout";
 
-// RISK: sem o AWS SDK (chega na T70), a checagem só prova que o endpoint SQS responde HTTP,
-// não que a fila existe. A T70 deve trocar por GetQueueUrl/GetQueueAttributes na fila real.
 export class SqsHealthCheck implements HealthCheck {
   readonly name = "sqs";
 
-  constructor(private readonly endpoint: string) {}
+  constructor(
+    private readonly client: SQSClient,
+    private readonly queueName: string,
+  ) {}
 
+  // DECISION: GetQueueUrl na fila consumida a cada checagem, sem cache; prova que o SQS
+  // responde E que a fila existe, não só que o endpoint aceita HTTP.
   check(): Promise<HealthStatus> {
     return withTimeout(async () => {
-      await fetch(this.endpoint, { signal: AbortSignal.timeout(HEALTH_CHECK_TIMEOUT_MS) });
-      return true;
+      const output = await this.client.send(new GetQueueUrlCommand({ QueueName: this.queueName }));
+      return output.QueueUrl !== undefined;
     });
   }
 }

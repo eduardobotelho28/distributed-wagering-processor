@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { TransactionKind } from "../../../../src/domain/transaction/transaction-kind";
-import { ApiError } from "../../../../src/interfaces/http/errors/api-error";
+import { toErrorReply } from "../../../../src/interfaces/http/errors/global-exception.filter";
 import { parseCreateWalletRequest } from "../../../../src/interfaces/http/validation/create-wallet.request";
 import { parseSubmitTransactionRequest } from "../../../../src/interfaces/http/validation/submit-transaction.request";
 
@@ -16,14 +16,15 @@ const validBody = {
 };
 const key = "provider-a:transaction-123";
 
+// Passa pelo filtro global para provar o status HTTP que o cliente realmente recebe.
 function rejectionOf(run: () => unknown): { status: number; code: string; message: string } {
   try {
     run();
   } catch (error) {
-    if (error instanceof ApiError)
-      return { status: error.status, code: error.code, message: error.message };
+    const reply = toErrorReply(error);
+    return { status: reply.status, code: reply.body.code, message: reply.body.message };
   }
-  throw new Error("expected ApiError");
+  throw new Error("expected a rejection");
 }
 
 describe("parseSubmitTransactionRequest", () => {

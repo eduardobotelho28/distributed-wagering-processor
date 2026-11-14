@@ -1,5 +1,5 @@
-import { ApiError } from "../errors/api-error";
-import { readOptionalText, readUuid } from "./field-readers";
+import { readOptionalText, readUuid } from "../../validation/field-readers";
+import { PayloadValidationError } from "../../validation/payload-validation.error";
 
 // DECISION: id malformado na URL é 400, não 404; a coluna é uuid e o cliente precisa saber
 // que errou o formato, não que o recurso sumiu.
@@ -15,7 +15,7 @@ const DIGITS = /^\d{1,4}$/;
 export function readLimit(value: unknown): number {
   if (value === undefined) return LEDGER_DEFAULT_LIMIT;
   if (typeof value !== "string" || !DIGITS.test(value)) {
-    throw ApiError.invalidPayload("INVALID_LIMIT", "limit must be a positive integer");
+    throw new PayloadValidationError("INVALID_LIMIT", "limit must be a positive integer");
   }
   return Number.parseInt(value, 10);
 }
