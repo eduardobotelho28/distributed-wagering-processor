@@ -252,8 +252,18 @@ export class InMemoryUnitOfWork implements UnitOfWork {
 
 export class RecordingLogger implements Logger {
   readonly errors: { message: string; fields: LogFields }[] = [];
+  readonly infos: { message: string; fields: LogFields }[] = [];
+  readonly warnings: { message: string; fields: LogFields }[] = [];
 
-  error(message: string, fields: LogFields): void {
+  info(message: string, fields: LogFields = {}): void {
+    this.infos.push({ message, fields });
+  }
+
+  warn(message: string, fields: LogFields = {}): void {
+    this.warnings.push({ message, fields });
+  }
+
+  error(message: string, fields: LogFields = {}): void {
     this.errors.push({ message, fields });
   }
 }
