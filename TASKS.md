@@ -339,7 +339,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   In ONE transaction: `inbox.tryInsert(consumerName, messageId)`; if not new and processed -> ack without effects; else run the same `SubmitWagerTransaction` logic and `markProcessed`. Payload hash stored in inbox.
   Done when: redelivered message produces no second effect.
 
-- [ ] **T73 [CORE] Ack after commit and error classification**
+- [x] **T73 [CORE] Ack after commit and error classification** (fc40825)
   Business outcome (processed/rejected/pending) -> ack. Transient (DB down, lock timeout) -> do not ack, set visibility with backoff. Permanent (malformed, impossible) -> send to DLQ after the limit. Document the classification table.
   Done when: tests per class.
 
