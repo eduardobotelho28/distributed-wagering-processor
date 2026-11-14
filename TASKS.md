@@ -300,7 +300,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
 - [x] **T63 GET /wallets/:walletId** (d6f1019, c43be27)
   Done when: e2e test, 404 for unknown id.
 
-- [ ] **T64 POST /wagering/transactions**
+- [x] **T64 POST /wagering/transactions** (d6f1019, 01967c8)
   Calls `SubmitWagerTransaction`. Returns README body; 200/201 processed, 202 pending, 422 rejected, 409 conflict.
   Done when: e2e tests for each status.
 
