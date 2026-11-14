@@ -1,0 +1,7 @@
+node_modules
+dist
+coverage
+bun.lock
+*.md
+# DECISION: prettier rewrites the healthcheck shell string into hard-to-read YAML quoting.
+docker-compose.yml
