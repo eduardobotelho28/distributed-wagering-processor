@@ -1,8 +1,6 @@
 {
   "name": "public",
-  "namespaces": [
-    "public"
-  ],
+  "namespaces": ["public"],
   "tables": [
     {
       "name": "wager_transactions",
@@ -158,14 +156,7 @@
           "default": null,
           "comment": null,
           "collation": null,
-          "enumItems": [
-            "BET",
-            "WIN",
-            "LOSS",
-            "REFUND",
-            "ROLLBACK",
-            "OPENING"
-          ],
+          "enumItems": ["BET", "WIN", "LOSS", "REFUND", "ROLLBACK", "OPENING"],
           "mappedType": "enum"
         },
         "next_attempt_at": {
@@ -352,13 +343,7 @@
           "default": null,
           "comment": null,
           "collation": null,
-          "enumItems": [
-            "PENDING",
-            "PENDING_REFERENCE",
-            "PROCESSED",
-            "REJECTED",
-            "FAILED"
-          ],
+          "enumItems": ["PENDING", "PENDING_REFERENCE", "PROCESSED", "REJECTED", "FAILED"],
           "mappedType": "enum"
         },
         "wallet_id": {
@@ -381,9 +366,7 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "next_attempt_at"
-          ],
+          "columnNames": ["next_attempt_at"],
           "composite": false,
           "constraint": false,
           "keyName": "wager_transactions_due_pending_reference_idx",
@@ -392,9 +375,7 @@
           "where": "(status)::text = 'PENDING_REFERENCE'::text"
         },
         {
-          "columnNames": [
-            "idempotency_key"
-          ],
+          "columnNames": ["idempotency_key"],
           "composite": false,
           "constraint": true,
           "keyName": "wager_transactions_idempotency_key_unique",
@@ -402,9 +383,7 @@
           "unique": true
         },
         {
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "keyName": "wager_transactions_pkey",
@@ -412,10 +391,7 @@
           "unique": true
         },
         {
-          "columnNames": [
-            "provider_id",
-            "external_transaction_id"
-          ],
+          "columnNames": ["provider_id", "external_transaction_id"],
           "composite": true,
           "constraint": true,
           "keyName": "wager_transactions_provider_external_unique",
@@ -458,14 +434,10 @@
       "triggers": [],
       "foreignKeys": {
         "wager_transactions_reference_fk": {
-          "columnNames": [
-            "reference_transaction_id"
-          ],
+          "columnNames": ["reference_transaction_id"],
           "constraintName": "wager_transactions_reference_fk",
           "localTableName": "public.wager_transactions",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "referencedTableName": "public.wager_transactions"
         }
       },
@@ -557,10 +529,7 @@
           "default": null,
           "comment": null,
           "collation": null,
-          "enumItems": [
-            "DEBIT",
-            "CREDIT"
-          ],
+          "enumItems": ["DEBIT", "CREDIT"],
           "mappedType": "enum"
         },
         "id": {
@@ -617,9 +586,7 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "keyName": "wallet_ledger_entries_pkey",
@@ -627,11 +594,7 @@
           "unique": true
         },
         {
-          "columnNames": [
-            "wallet_id",
-            "created_at",
-            "id"
-          ],
+          "columnNames": ["wallet_id", "created_at", "id"],
           "composite": true,
           "constraint": false,
           "keyName": "wallet_ledger_entries_wallet_cursor_idx",
@@ -639,10 +602,7 @@
           "unique": false
         },
         {
-          "columnNames": [
-            "wallet_id",
-            "transaction_id"
-          ],
+          "columnNames": ["wallet_id", "transaction_id"],
           "composite": true,
           "constraint": true,
           "keyName": "wallet_ledger_entries_wallet_transaction_unique",
@@ -680,35 +640,24 @@
         {
           "name": "wallet_ledger_entries_append_only",
           "timing": "before",
-          "events": [
-            "delete",
-            "update"
-          ],
+          "events": ["delete", "update"],
           "forEach": "row",
           "body": ""
         }
       ],
       "foreignKeys": {
         "wallet_ledger_entries_transaction_fk": {
-          "columnNames": [
-            "transaction_id"
-          ],
+          "columnNames": ["transaction_id"],
           "constraintName": "wallet_ledger_entries_transaction_fk",
           "localTableName": "public.wallet_ledger_entries",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "referencedTableName": "public.wager_transactions"
         },
         "wallet_ledger_entries_wallet_fk": {
-          "columnNames": [
-            "wallet_id"
-          ],
+          "columnNames": ["wallet_id"],
           "constraintName": "wallet_ledger_entries_wallet_fk",
           "localTableName": "public.wallet_ledger_entries",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "referencedTableName": "public.wallets"
         }
       },
@@ -840,9 +789,7 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "keyName": "wallets_pkey",
@@ -850,10 +797,7 @@
           "unique": true
         },
         {
-          "columnNames": [
-            "player_id",
-            "currency"
-          ],
+          "columnNames": ["player_id", "currency"],
           "composite": true,
           "constraint": true,
           "keyName": "wallets_player_id_currency_unique",
