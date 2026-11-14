@@ -38,6 +38,12 @@ interface Submission {
   now: Date;
 }
 
+interface Movement {
+  direction: LedgerDirection;
+  referenceTransactionId: string | null;
+  overdraftCode: FailureCode;
+}
+
 export class SubmitWagerTransactionUseCase {
   constructor(
     private readonly unitOfWork: UnitOfWork,
@@ -91,16 +97,22 @@ export class SubmitWagerTransactionUseCase {
     if (transaction.money.currency !== wallet.currency) {
       return this.reject(repositories, transaction, FailureCode.CURRENCY_MISMATCH, wallet.balance);
     }
-    return this.applyMovement(submission, transaction.ledgerDirectionFor(), null);
+    return this.applyMovement(submission, {
+      direction: transaction.ledgerDirectionFor(),
+      referenceTransactionId: null,
+      overdraftCode: FailureCode.INSUFFICIENT_FUNDS,
+    });
   }
 
   // INVARIANT: transação, lançamento e saldo são gravados na mesma transação SQL do lock.
-  private async applyMovement(
-    submission: Submission,
-    direction: LedgerDirection,
-    referenceTransactionId: string | null,
-  ): Promise<SubmitResult> {
+  // INVARIANT: débito sem saldo vira REJECTED antes de tocar a carteira; o saldo nunca fica
+  // negativo (também barrado por Wallet.debit e pelo CHECK balance >= 0).
+  private async applyMovement(submission: Submission, movement: Movement): Promise<SubmitResult> {
     const { repositories, transaction, wallet, now } = submission;
+    const { direction, referenceTransactionId, overdraftCode } = movement;
+    if (direction === LedgerDirection.DEBIT && wallet.balance.isLessThan(transaction.money)) {
+      return this.reject(repositories, transaction, overdraftCode, wallet.balance);
+    }
     const entry =
       direction === LedgerDirection.DEBIT
         ? wallet.debit(transaction.money, transaction.id, now)
