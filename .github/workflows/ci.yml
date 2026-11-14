@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      # DECISION: CI runs inside the same Dockerfile image used locally instead of
+      # setup-bun on the runner, so "everything runs in Docker" holds in CI too and
+      # the Bun version cannot drift between dev and CI.
+      - name: Build image (install deps)
+        run: docker build -t dwp-ci .
+
+      - name: Lint
+        run: docker run --rm dwp-ci bun run lint
+
+      - name: Typecheck
+        run: docker run --rm dwp-ci bun run typecheck
+
+      # RISK: integration/concurrency suites need Postgres + LocalStack and are not run
+      # here yet; they join CI once those suites exist.
+      - name: Unit tests
+        run: docker run --rm dwp-ci bun run test:unit
