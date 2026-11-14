@@ -165,7 +165,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   Columns: `id uuid PK`, `player_id`, `currency char(3)`, `balance numeric(19,2)`, `version int`, `created_at`, `updated_at`. `UNIQUE(player_id, currency)`, `CHECK (balance >= 0)`. Reversible `down`.
   Done when: up and down both run.
 
-- [ ] **T32 Migration: wager_transactions**
+- [x] **T32 Migration: wager_transactions** (a84b216)
   Columns for every field in the README plus `resulting_balance numeric(19,2) NULL`, `failure_code`, `processed_at`, `pending_attempts int`, `next_attempt_at`. `UNIQUE(idempotency_key)`, `UNIQUE(provider_id, external_transaction_id)`, CHECK on status/kind values, CHECK that REFUND/ROLLBACK have a reference external id, CHECK `amount >= 0`. Index for due `PENDING_REFERENCE`.
   Done when: up and down both run.
 
