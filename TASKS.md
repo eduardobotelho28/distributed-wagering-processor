@@ -229,7 +229,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   `SubmitResult` (processed | rejected | pendingReference, plus `idempotentReplay`), clock port, id generator port (UUID v7), event context.
   Done when: types compile; no infra imports.
 
-- [ ] **T47 CreateWallet**
+- [x] **T47 CreateWallet** (075b1ee)
   Creates wallet; if initial balance > 0, creates internal `OPENING` transaction (PROCESSED) and CREDIT ledger entry in the SAME transaction. Duplicate `(playerId, currency)` -> conflict result.
   Done when: unit test with fakes plus integration test with real DB.
 
