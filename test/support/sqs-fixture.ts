@@ -1,4 +1,8 @@
-import { CreateQueueCommand, DeleteQueueCommand } from "@aws-sdk/client-sqs";
+import {
+  CreateQueueCommand,
+  DeleteQueueCommand,
+  GetQueueAttributesCommand,
+} from "@aws-sdk/client-sqs";
 import type { MessageQueue } from "../../src/application/ports/message-queue";
 import { AbandonWagerMessageUseCase } from "../../src/application/abandon-wager-message/abandon-wager-message.use-case";
 import { ConsumeWagerMessageUseCase } from "../../src/application/consume-wager-message/consume-wager-message.use-case";
@@ -20,6 +24,8 @@ export interface SqsTestQueues {
   queue: SqsMessageQueue;
   main: string;
   deadLetter: string;
+  // Visíveis + em voo; só chega a zero quando todas as mensagens receberam ack.
+  depth(name: string): Promise<number>;
   dispose(): Promise<void>;
 }
 
@@ -43,6 +49,17 @@ export async function createTestQueues(visibilitySeconds: number): Promise<SqsTe
     queue,
     main,
     deadLetter,
+    async depth(name) {
+      const output = await client.send(
+        new GetQueueAttributesCommand({
+          QueueUrl: await queue.urlOf(name),
+          AttributeNames: ["ApproximateNumberOfMessages", "ApproximateNumberOfMessagesNotVisible"],
+        }),
+      );
+      const visible = output.Attributes?.ApproximateNumberOfMessages ?? "0";
+      const inFlight = output.Attributes?.ApproximateNumberOfMessagesNotVisible ?? "0";
+      return Number.parseInt(visible, 10) + Number.parseInt(inFlight, 10);
+    },
     async dispose() {
       for (const name of [main, deadLetter]) {
         await client.send(new DeleteQueueCommand({ QueueUrl: await queue.urlOf(name) }));
