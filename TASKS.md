@@ -379,7 +379,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
 
 ## Phase 7: Observability
 
-- [ ] **T81 Structured logging**
+- [x] **T81 Structured logging** (af4a545)
   JSON logger, `AsyncLocalStorage` context with `correlationId`, `messageId`, `transactionId`, `walletId`, `providerId`. Redaction: never log full payloads or amounts beyond what is needed.
   Done when: test asserts log shape and absence of payload.
 
