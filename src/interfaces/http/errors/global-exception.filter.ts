@@ -37,7 +37,7 @@ function fromHttpException(error: HttpException): ErrorReply {
 
 // DECISION: a decisão vive numa função pura para ser testada sem subir o Nest.
 // RISK: erro desconhecido vira 500 não-retryable com mensagem genérica; a causa real só
-// aparece no log (T81), nunca no corpo, para não vazar detalhes internos.
+// aparece no log ("http request failed"), nunca no corpo, para não vazar detalhes internos.
 export function toErrorReply(error: unknown): ErrorReply {
   if (error instanceof ApiError) return { status: error.status, body: error.toBody(), headers: {} };
   if (error instanceof PayloadValidationError) {

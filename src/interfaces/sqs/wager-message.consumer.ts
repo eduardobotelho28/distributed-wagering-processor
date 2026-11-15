@@ -17,7 +17,7 @@ import {
   type WagerMessage,
 } from "./wager-message.parser";
 
-// Tabela de classificação do consumidor (T73/T74):
+// Tabela de classificação do consumidor (espelhada no ARCHITECTURE.md §2.10):
 //
 //   situação                                          classe        ação
 //   processed / rejected / pendingReference           negócio       ack (após commit)

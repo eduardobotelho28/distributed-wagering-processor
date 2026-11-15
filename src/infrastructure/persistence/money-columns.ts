@@ -6,7 +6,7 @@ export interface MoneyColumns {
 }
 
 // DECISION: mapper explícito em vez de custom Type do MikroORM: o Money ocupa duas colunas
-// (amount + currency) e um Type mapeia só uma. Os modelos da T38 chamam estas funções.
+// (amount + currency) e um Type mapeia só uma. Os mappers de persistência chamam estas funções.
 // INVARIANT: o driver pg devolve numeric como string; Money.from rejeita qualquer não-string,
 // então um número nunca entra no domínio por aqui.
 export function moneyToColumns(money: Money): MoneyColumns {

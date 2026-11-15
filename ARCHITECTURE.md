@@ -11,6 +11,7 @@ Sumário:
 3. [Invariantes, códigos de falha e transições](#3-invariantes-códigos-de-falha-e-transições)
 4. [Autenticação](#4-autenticação)
 5. [Limitações e trade-offs](#5-limitações-e-trade-offs)
+6. [Checklist eliminatória](#6-checklist-eliminatória)
 
 ---
 
@@ -473,3 +474,22 @@ simulado bloqueando as conexões do banco descartável da instância (`ALLOW_CON
 entre o app e o LocalStack, que trava o `DeleteMessage` ou responde 503. Para a instância, o
 efeito é o mesmo de uma queda real; a diferença é que o teste controla o instante exato, o que
 tornou esses cenários determinísticos.
+
+---
+
+## 6. Checklist eliminatória
+
+Cada falha eliminatória do enunciado, com a evidência de que não ocorre. Os comandos rodam a
+partir da raiz do repositório; os testes rodam como descrito no [README](README.md#testes).
+
+| Falha eliminatória | Situação | Evidência no código | Teste que prova |
+|---|---|---|---|
+| `number` para dinheiro | não ocorre | `Money` sobre `decimal.js`; `NUMERIC(19,2)` no banco; string decimal no JSON. Lint proíbe `parseFloat`, `Number()` e `toFixed` em `src/`. `grep -rnE "parseFloat\|\.toFixed\(\|[^.a-zA-Z]Number\(" src` → 0 ocorrências; os 3 `Number.parseInt` de `src/` são de contagens (porta, limite de página, `receiveCount`), nunca de valor. | `test/lint/money-float-ban.test.ts`, `test/unit/domain/money/*.test.ts`, `test/integration/persistence/money-columns.test.ts` (`"0.10"`, `"1234567.89"` ida e volta) |
+| saldo negativo causado por race | não ocorre | lock `FOR UPDATE` na carteira antes de qualquer decisão; débito sem saldo vira `REJECTED` antes de tocar o saldo; `CHECK (balance >= 0)` em `wallets` e `CHECK (balance_after >= 0)` no ledger | `test/concurrency/mandatory-scenario.test.ts` (2×80 em 100, repetido 20×, 3 instâncias), `test/concurrency/hot-wallet-mixed-load.test.ts` (HTTP + SQS na mesma carteira), `test/integration/persistence/constraints.test.ts` |
+| débito ou crédito duplicado | não ocorre | `UNIQUE (idempotency_key)`, `UNIQUE (provider_id, external_transaction_id)`, `UNIQUE (wallet_id, transaction_id)` no ledger; inbox com PK `(consumer_name, message_id)` na mesma transação do efeito; índice único de reversão por referência | `test/concurrency/same-bet-50x.test.ts` (1 débito, 49 replays), `test/concurrency/killed-before-ack.test.ts` (`SIGKILL` entre commit e ack), `test/concurrency/concurrent-reversals.test.ts`, `test/concurrency/restart-consistency.test.ts` |
+| idempotência apenas em memória | não ocorre | toda deduplicação é constraint do Postgres. Os `Map`/`Set` de `src/` (`grep -rnE "new (Map\|Set)" src`) são tabelas constantes de regra, o registro de métricas e o cache de URL de fila do SQS; nenhum guarda key, hash nem `messageId`. | `test/integration/application/idempotency-key-race.test.ts` (mesma key em 2 carteiras, processos concorrentes no Postgres), `test/integration/application/consume-wager-message.test.ts` (reentrega e entrega simultânea) |
+| solução correta somente com uma instância | não ocorre | concorrência pela linha da carteira no Postgres; workers coordenados por `FOR UPDATE SKIP LOCKED`; sem estado compartilhado em memória nem eleição de líder | toda a suíte `test/concurrency/` sobe **3 processos reais** do app; `test/integration/messaging/two-publishers.test.ts` (2 processos no mesmo outbox) |
+| publicação de evento antes do commit | não ocorre | o único ponto que grava evento é `SubmissionEvents` → `outbox.insert`, dentro da transação da submissão (`grep -rn "outbox.insert" src` → 1 ocorrência). Só o publisher envia ao SQS, e só lê linhas já commitadas. | `test/integration/persistence/mikro-orm-unit-of-work.test.ts` (erro desfaz carteira, ledger, transação, inbox e outbox juntos), `test/unit/application/submit-wager-transaction/events.test.ts` |
+| ausência de ledger auditável | não ocorre | `wallet_ledger_entries` append-only (trigger barra `UPDATE`/`DELETE`), com `balance_before`, `balance_after`, direção e transação de origem; rejeições também ficam gravadas com `FailureCode`; extrato paginado e reconciliação que nunca corrige em silêncio | `test/integration/persistence/wallet-ledger-entries.migration.test.ts`, `test/integration/http/ledger.e2e.test.ts`, `test/integration/http/reconciliation.e2e.test.ts`, `assertLedgerInvariant` em todo teste de integração e concorrência |
+| testes que substituem completamente PostgreSQL e SQS por mocks | não ocorre | testes de integração e concorrência usam Postgres e LocalStack reais, com banco e filas descartáveis por suíte. Nenhum deles importa repositório ou unidade de trabalho em memória; os únicos fakes ali são relógio, logger e métricas. Fakes completos ficam restritos a `test/unit/`. | `test/integration/**`, `test/concurrency/**`; para conferir: `grep -rlE "InMemory(UnitOfWork\|[A-Za-z]+Repository)" test/integration test/concurrency` → nenhum arquivo |
+

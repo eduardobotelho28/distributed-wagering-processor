@@ -3,7 +3,7 @@ export interface ReceivedMessage {
   transportId: string;
   receiptHandle: string;
   body: string;
-  // INVARIANT: vem do ApproximateReceiveCount do SQS; é a base do limite antes da DLQ (T74).
+  // INVARIANT: vem do ApproximateReceiveCount do SQS; é a base do limite antes da DLQ.
   receiveCount: number;
 }
 
@@ -23,7 +23,7 @@ export interface OutgoingMessage {
 // SQS, só receber, confirmar, adiar e enviar.
 export interface MessageQueue {
   receive(queue: string, options: ReceiveOptions): Promise<ReceivedMessage[]>;
-  // INVARIANT: só depois do commit da transação que processou a mensagem (T73).
+  // INVARIANT: só depois do commit da transação que processou a mensagem.
   ack(queue: string, receiptHandle: string): Promise<void>;
   changeVisibility(queue: string, receiptHandle: string, timeoutSeconds: number): Promise<void>;
   send(queue: string, message: OutgoingMessage): Promise<void>;

@@ -1,11 +1,13 @@
-// optei string enum em vez de union de literais. Os valores são persistidos no banco
-// e expostos na API, então precisam ser estáveis e explícitos; o enum dá um único ponto de verdade.
+// DECISION: string enum em vez de união de literais. Os valores são persistidos, expostos na API
+// e vão nos eventos, então precisam ser estáveis; o enum é o único ponto de verdade.
+// INVARIANT: reenviar a MESMA idempotency key devolve sempre o mesmo resultado (replay). Quando a
+// orientação abaixo diz "nova transação", é outro externalTransactionId e outra key.
 export enum FailureCode {
-  /** Saldo insuficiente para o débito. Provedor: não reenviar igual; só após novo crédito na carteira. */
+  /** Saldo insuficiente para o débito. Provedor: nova transação só após um crédito na carteira. */
   INSUFFICIENT_FUNDS = "INSUFFICIENT_FUNDS",
   /** Estorno de crédito deixaria saldo negativo. Provedor: não reenviar; tratar manualmente. */
   REVERSAL_WOULD_OVERDRAW = "REVERSAL_WOULD_OVERDRAW",
-  /** Transação de referência não existe. Provedor: reenviar depois que a referência for enviada. */
+  /** Referência não chegou dentro do limite (8 tentativas / 1h). Provedor: enviar a referência e uma nova reversão. */
   REFERENCE_NOT_FOUND = "REFERENCE_NOT_FOUND",
   /** Referência já foi estornada uma vez. Provedor: desistir; reenviar nunca terá sucesso. */
   REFERENCE_ALREADY_REVERSED = "REFERENCE_ALREADY_REVERSED",

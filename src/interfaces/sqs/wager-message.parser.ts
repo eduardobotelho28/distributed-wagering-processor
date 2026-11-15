@@ -17,7 +17,7 @@ export interface WagerMessage {
 }
 
 // DECISION: falha de parse é resultado, não exceção. Toda falha aqui é PERMANENTE: a mesma
-// mensagem reentregue falha igual, então o consumidor a manda para a DLQ (T73/T74).
+// mensagem reentregue falha igual, então o consumidor a manda para a DLQ.
 // messageId vem junto quando foi possível lê-lo, para o log/DLQ identificar a mensagem.
 export type ParsedWagerMessage =
   | { ok: true; message: WagerMessage }

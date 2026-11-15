@@ -2,10 +2,12 @@ import Decimal from "decimal.js";
 import { CurrencyMismatchError } from "./currency-mismatch.error";
 import { InvalidMoneyError } from "./invalid-money.error";
 
-// Aqui eu crio uma cópia da classe Decimal com precisão de 40 dígitos e limites de expoente para evitar notação científica em valores monetários. Isso garante que os valores sejam representados de forma legível e consistente, especialmente quando lidamos com grandes quantias de dinheiro.
+// DECISION: cópia própria do Decimal com 40 dígitos e expoentes em ±40. A precisão sobra para
+// NUMERIC(19,2) e os limites impedem que toString() saia em notação científica ("1e+21").
 const MoneyDecimal = Decimal.clone({ precision: 40, toExpPos: 40, toExpNeg: -40 });
 
-// Regras: Não negativo, pelo menos 1 dígito inteiro, no máximo 2 casas decimais. Qualquer outra coisa (NaN, Infinity, "1e3", "", "-1", "1.234") nunca chega ao Decimal.
+// INVARIANT: só entra string decimal não negativa, com até 2 casas. NaN, Infinity, "1e3", "",
+// "-1" e "1.234" são recusados antes de chegar ao Decimal (teste money-construction).
 const AMOUNT_PATTERN = /^\d+(\.\d{1,2})?$/;
 const CURRENCY_PATTERN = /^[A-Z]{3}$/;
 const SCALE = 2;
@@ -43,9 +45,10 @@ export class Money {
     return new Money(this.value.plus(other.value), this.currency);
   }
 
-  // decidi aqui que o subtract pode gerar Money negativo. Quem decide se saldo negativo é permitido é a Wallet,
-  // não o value object, segundo o princípio de responsabilidade única. O value object só garante que a operação seja válida, ou seja, que as moedas sejam iguais.
-  // balance >= 0 é garantido pela Wallet e pelo CHECK no banco.
+  // DECISION: subtract pode gerar Money negativo; o value object só garante a mesma moeda.
+  // Quem decide se um saldo negativo é aceitável é a Wallet (a diferença da reconciliação, por
+  // exemplo, pode ser negativa).
+  // INVARIANT: saldo >= 0 é garantido por Wallet.debit e pelo CHECK (balance >= 0) no banco.
   subtract(other: Money): Money {
     this.assertSameCurrency(other);
     return new Money(this.value.minus(other.value), this.currency);
@@ -67,8 +70,8 @@ export class Money {
     return this.value.lessThan(0);
   }
 
-  // Aqui eu decidi que comparar moedas diferentes lança erro em vez de retornar false;
-  // comparar BRL com USD é bug de quem chama.
+  // DECISION: comparar moedas diferentes lança CurrencyMismatchError em vez de retornar false;
+  // comparar BRL com USD é bug de quem chama, não uma resposta.
   isLessThan(other: Money): boolean {
     this.assertSameCurrency(other);
     return this.value.lessThan(other.value);
@@ -99,7 +102,8 @@ export class Money {
     return currency;
   }
 
-  // aqui eu decido por setar manualmente a escala para 2 casas decimais em vez de usar o método toFixed, que é proibido pelo lint no diretório src/. Isso garante que os valores monetários sejam sempre representados com duas casas decimais, mesmo que o valor original tenha menos casas decimais.
+  // DECISION: escala de 2 casas montada à mão a partir de toString(), sem toFixed (proibido
+  // pelo lint em src/ por arredondar via float). "10" vira "10.00", "0.5" vira "0.50".
   private formatAmount(): string {
     const [integer = "0", fraction = ""] = this.value.abs().toString().split(".");
     const sign = this.value.isNegative() ? "-" : "";

@@ -14,7 +14,7 @@ export type GetLedgerResult =
   | { outcome: "invalidCursor" }
   | { outcome: "invalidLimit"; max: number };
 
-// DECISION: limite máximo de 200 por página (T66); protege o banco de varreduras grandes.
+// DECISION: limite máximo de 200 por página; protege o banco de varreduras grandes.
 export const LEDGER_PAGE_MAX_LIMIT = 200;
 
 export class GetLedgerUseCase {

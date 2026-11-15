@@ -36,7 +36,7 @@ function toDomainOrNull(model: WagerTransactionModel | null): WagerTransaction |
 const IDEMPOTENCY_KEY_CONSTRAINT = "wager_transactions_idempotency_key_unique";
 
 // RISK: o MikroORM não expõe o nome da constraint em campo tipado; ele vem na mensagem do
-// Postgres. O teste de integração da corrida (T56) quebra se o formato mudar.
+// Postgres. O teste idempotency-key-race quebra se o formato mudar.
 function isIdempotencyKeyViolation(error: unknown): boolean {
   return (
     error instanceof UniqueConstraintViolationException &&
@@ -53,7 +53,8 @@ export class WagerTransactionRepository implements WagerTransactionRepositoryPor
   constructor(private readonly em: EntityManager) {}
 
   // INVARIANT: duplicidade de idempotency_key / (provider, external id) é barrada pelos UNIQUE
-  // do banco; o erro de violação sobe para o caso de uso decidir o replay.
+  // do banco. A violação da key vira DuplicateIdempotencyKeyError; o caso de uso relê a key numa
+  // transação nova e decide entre replay e conflito.
   async insert(
     transaction: WagerTransaction,
     state: WagerTransactionPersistenceState = EMPTY_PERSISTENCE_STATE,
