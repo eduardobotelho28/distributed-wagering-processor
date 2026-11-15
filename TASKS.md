@@ -440,19 +440,19 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
 
 ## Phase 9: Documentation and polish
 
-- [ ] **T95 README.md**
+- [x] **T95 README.md** (03d47a9)
   Setup in one command (`docker compose up`), how to run each test suite, example `curl` calls, env vars.
   Done when: a fresh clone works following only the README.
 
-- [ ] **T96 ARCHITECTURE.md: decisions**
+- [x] **T96 ARCHITECTURE.md: decisions** (099a332)
   ORM choice, Money mapping, transaction strategy, lock choice and alternatives rejected, idempotency design and hash algorithm, inbox/outbox, status mapping, queue classification, backoff/limits, auth decision, reversal interpretation.
   Done when: every `// DECISION:` comment is reflected.
 
-- [ ] **T97 ARCHITECTURE.md: invariant matrix and failure codes**
+- [x] **T97 ARCHITECTURE.md: invariant matrix and failure codes** (099a332)
   Table: invariant -> where enforced (code, DB constraint) -> test that proves it. Table of `FailureCode` with retry guidance. Transition table of `WagerTransaction`.
   Done when: no invariant without a test.
 
-- [ ] **T98 ARCHITECTURE.md: limitations and trade-offs**
+- [x] **T98 ARCHITECTURE.md: limitations and trade-offs** (099a332)
   Honest section: what is not handled, what would change at scale (partitioning, hot-wallet throughput), what was cut and why.
   Done when: at least 5 concrete limitations.
 

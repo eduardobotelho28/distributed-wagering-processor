@@ -1,60 +1,206 @@
 # Distributed Wagering Processor
 
-Everything runs in Docker. No local Bun/Node install is required.
+Serviço financeiro que processa transações de apostas (BET, WIN, LOSS, REFUND, ROLLBACK) vindas
+de vários provedores, por **HTTP** e por **SQS**, com saldo exato em decimal, idempotência
+garantida pelo banco, lock pessimista por carteira, ledger append-only, inbox e transactional
+outbox. Roda com várias instâncias em paralelo sem coordenação além do Postgres.
 
-## Scripts
+Stack: Bun · TypeScript strict · NestJS · PostgreSQL 16 · MikroORM · AWS SQS (LocalStack) ·
+Docker Compose. Decisões, invariantes, códigos de falha e limitações estão em
+[ARCHITECTURE.md](ARCHITECTURE.md). O enunciado original do desafio está no fim deste arquivo.
 
-Run any script through the `app` service. `--rm` removes the one-off container afterwards.
+## Subir o projeto
 
-```sh
-docker compose run --rm app bun run <script>
-```
-
-| Script             | What it does                                                         |
-| ------------------ | -------------------------------------------------------------------- |
-| `start`            | Starts the app once (no watch).                                      |
-| `start:dev`        | Starts the app with hot reload. Default command of `docker compose up app`. |
-| `lint`             | ESLint + Prettier check.                                             |
-| `format`           | Prettier write.                                                      |
-| `typecheck`        | `tsc --noEmit` with the strict config.                               |
-| `test`             | Every test suite.                                                    |
-| `test:unit`        | Unit tests (`test/unit`, `test/lint`). No Postgres/SQS needed.       |
-| `test:integration` | Integration tests (`test/integration`) against real Postgres + LocalStack. |
-| `test:concurrency` | Concurrency tests (`test/concurrency`) against real Postgres + LocalStack. |
-| `migration:create` | Placeholder until MikroORM setup (T30).                              |
-| `migration:up`     | Placeholder until MikroORM setup (T30).                              |
-| `migration:down`   | Placeholder until MikroORM setup (T30).                              |
-
-Examples:
+Pré-requisito: Docker com Compose v2. Não é preciso instalar Bun, Node nem Postgres.
 
 ```sh
-docker compose run --rm app bun run lint
-docker compose run --rm app bun run typecheck
-docker compose run --rm app bun run test:unit
+cp .env.example .env
+docker compose up
 ```
 
-`docker compose run app` waits for `postgres` and `localstack` to be healthy, so integration and concurrency suites can reach them by service name.
+O `docker compose up` sobe Postgres, LocalStack (já com as filas criadas) e a aplicação na porta
+**3000**. A aplicação **aplica as migrations sozinha** antes de iniciar. Ela está pronta quando
+`/health/ready` responde 200:
 
-## Integration event envelope
+```sh
+curl -s localhost:3000/health/live    # {"status":"alive"}
+curl -s localhost:3000/health/ready   # {"status":"ready","checks":{"database":"up","sqs":"up"}}
+```
 
-Every event published from the outbox to `wager-events` uses this envelope. Money is always `{ amount: decimal string, currency }`. Consumers dedupe by `eventId`.
+Na mesma instância rodam a API HTTP, o consumidor SQS de `wager-transactions.fifo`, o publisher
+do outbox (para `wager-events`) e o worker de referências pendentes.
+
+## Exemplos de uso
+
+Criar uma carteira (o saldo inicial vira uma transação interna `OPENING` com lançamento no ledger):
+
+```sh
+curl -s -X POST localhost:3000/wallets \
+  -H 'content-type: application/json' \
+  -d '{"playerId":"player-1","initialBalance":{"amount":"100.00","currency":"BRL"}}'
+# 201 {"id":"<walletId>","playerId":"player-1","balance":{"amount":"100.00","currency":"BRL"},"version":1}
+```
+
+Enviar uma aposta. O header `Idempotency-Key` é obrigatório; `x-correlation-id` é opcional e
+volta na resposta:
+
+```sh
+WALLET=<walletId>
+curl -s -i -X POST localhost:3000/wagering/transactions \
+  -H 'content-type: application/json' \
+  -H 'Idempotency-Key: provider-a:transaction-123' \
+  -H 'x-correlation-id: demo-1' \
+  -d '{"providerId":"provider-a","externalTransactionId":"transaction-123","playerId":"player-1",
+       "walletId":"'"$WALLET"'","roundId":"round-987","gameId":"fortune-chimp",
+       "kind":"BET","money":{"amount":"25.00","currency":"BRL"}}'
+# 201 {"transactionId":"…","status":"PROCESSED","balance":{"amount":"75.00","currency":"BRL"},"idempotentReplay":false}
+```
+
+Repetir **exatamente** a mesma requisição devolve `200` com `idempotentReplay: true` e o mesmo
+saldo, sem novo débito. A mesma key com outro payload devolve `409 IDEMPOTENCY_CONFLICT`.
+
+Reversão de uma aposta (`REFUND` ou `ROLLBACK`) aponta para o `externalTransactionId` da referência:
+
+```sh
+curl -s -X POST localhost:3000/wagering/transactions \
+  -H 'content-type: application/json' -H 'Idempotency-Key: provider-a:refund-1' \
+  -d '{"providerId":"provider-a","externalTransactionId":"refund-1","playerId":"player-1",
+       "walletId":"'"$WALLET"'","roundId":"round-987","gameId":"fortune-chimp","kind":"REFUND",
+       "money":{"amount":"25.00","currency":"BRL"},"referenceExternalTransactionId":"transaction-123"}'
+```
+
+Se a referência ainda não chegou, a resposta é `202 PENDING_REFERENCE` e o worker resolve depois.
+
+Consultas e reconciliação:
+
+```sh
+curl -s localhost:3000/wallets/$WALLET
+curl -s "localhost:3000/wallets/$WALLET/ledger?limit=50"          # nextCursor para a próxima página
+curl -s localhost:3000/wagering/transactions/<transactionId>
+curl -s localhost:3000/providers/provider-a/wagering/transactions/transaction-123
+curl -s -X POST localhost:3000/wallets/$WALLET/reconciliation      # consistent: true|false
+curl -s localhost:3000/metrics                                     # Prometheus
+```
+
+Enviar uma transação pela fila (mesmo caso de uso do HTTP; o grupo FIFO é o `walletId`):
+
+```sh
+docker compose exec localstack awslocal sqs send-message \
+  --queue-url http://localhost:4566/000000000000/wager-transactions.fifo \
+  --message-group-id "$WALLET" --message-deduplication-id msg-1 \
+  --message-body '{"messageId":"msg-1","type":"WagerTransactionRequested",
+    "occurredAt":"2026-07-29T15:00:00.000Z","data":{"providerId":"provider-a",
+    "externalTransactionId":"transaction-456","idempotencyKey":"provider-a:transaction-456",
+    "playerId":"player-1","walletId":"'"$WALLET"'","roundId":"round-987",
+    "gameId":"fortune-chimp","kind":"BET","money":{"amount":"5.00","currency":"BRL"}}}'
+```
+
+### Códigos HTTP
+
+Os mesmos em todos os endpoints. Todo erro tem o corpo `{ code, message, retryable }`; só o 503
+tem `retryable: true` (e `Retry-After`).
+
+| Situação | Status |
+|---|---|
+| processado (primeira vez / replay idêntico) | 201 / 200 |
+| aceito com referência pendente | 202 |
+| payload inválido, header ausente, id malformado | 400 |
+| recurso inexistente | 404 |
+| conflito de idempotência, carteira duplicada | 409 |
+| rejeição de regra de negócio (também no replay) | 422 |
+| falha interna permanente (`FAILED`) | 500 |
+| falha transitória de infraestrutura | 503 |
+
+## Testes
+
+Tudo roda dentro do container `app`, contra Postgres e LocalStack reais (nada é mockado nos
+testes de integração e concorrência). Com o `docker compose up` rodando:
+
+```sh
+docker compose exec app bun run lint            # ESLint + Prettier
+docker compose exec app bun run typecheck       # tsc --noEmit (strict)
+docker compose exec app bun run test:unit        # domínio, casos de uso, mapeamentos (segundos)
+docker compose exec app bun run test:integration # Postgres + LocalStack reais (~40s)
+docker compose exec app bun run test:concurrency # várias instâncias reais do app (~70s)
+docker compose exec app bun test                 # tudo (~2min)
+```
+
+Sem a stack no ar, troque `exec` por `run --rm` (o Compose sobe Postgres e LocalStack antes).
+
+Cada suíte cria o próprio banco descartável e filas temporárias, então pode rodar em paralelo
+com a aplicação sem interferir nos dados dela. A suíte de concorrência sobe **processos reais**
+do app (até 3 por teste) e cobre o cenário obrigatório, a mesma aposta 50×, reversões em
+corrida, `SIGKILL` entre commit e ack, reinício no meio da carga e indisponibilidade de Postgres
+e SQS.
+
+## Variáveis de ambiente
+
+Validadas no boot (`src/infrastructure/config/app-config.ts`); uma variável ausente ou inválida
+interrompe o processo listando todas as falhas.
+
+| Variável | Padrão | Uso |
+|---|---|---|
+| `DATABASE_URL` | obrigatória | Conexão Postgres |
+| `AWS_REGION` | obrigatória | Região do SQS |
+| `SQS_ENDPOINT` | obrigatória | Endpoint do SQS (LocalStack no compose) |
+| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | `test` | Credenciais (o LocalStack aceita qualquer valor) |
+| `SQS_TRANSACTIONS_QUEUE` | obrigatória | Fila FIFO consumida |
+| `SQS_TRANSACTIONS_DLQ` | obrigatória | DLQ da fila de transações |
+| `SQS_EVENTS_QUEUE` | obrigatória | Fila onde o outbox publica os eventos |
+| `APP_PORT` | `3000` | Porta HTTP |
+| `SQS_CONSUMER_ENABLED` | `true` | Liga o consumidor SQS nesta instância |
+| `BACKGROUND_WORKERS_ENABLED` | `true` | Liga publisher do outbox e worker de pendências |
+| `OUTBOX_PUBLISH_INTERVAL_MS` | `1000` | Intervalo entre rodadas do publisher |
+| `PENDING_REFERENCE_INTERVAL_MS` | `5000` | Intervalo entre rodadas do worker de pendências |
+| `OUTBOX_BATCH_SIZE` | `50` | Eventos por rodada do publisher |
+| `PENDING_REFERENCE_BATCH_SIZE` | `50` | Pendências por rodada do worker |
+| `SQS_MAX_MESSAGES` | `10` | Mensagens por receive (máx. 10) |
+
+`POSTGRES_*`, `POSTGRES_PORT` e `LOCALSTACK_PORT` configuram só os containers de infraestrutura.
+
+## Eventos publicados
+
+O outbox publica em `wager-events` com entrega **at-least-once**; consumidores deduplicam pelo
+`eventId`. Valores monetários são sempre `{ amount: string decimal, currency }`.
 
 ```json
 {
-  "eventId": "uuid",
+  "eventId": "uuid-v7",
   "eventType": "WalletBalanceChanged",
   "eventVersion": 1,
+  "aggregateId": "<walletId>",
+  "correlationId": "demo-1",
+  "causationId": null,
   "occurredAt": "2026-01-01T00:00:00.000Z",
   "data": {
     "walletId": "uuid",
     "transactionId": "uuid",
     "balanceBefore": { "amount": "100.00", "currency": "BRL" },
-    "balanceAfter": { "amount": "90.00", "currency": "BRL" }
+    "balanceAfter": { "amount": "75.00", "currency": "BRL" }
   }
 }
 ```
 
-Event types: `WagerTransactionProcessed`, `WagerTransactionRejected`, `WalletBalanceChanged`, `WagerTransactionPendingReference`.
+Tipos: `WagerTransactionProcessed` (inclusive LOSS), `WagerTransactionRejected`,
+`WalletBalanceChanged` (só quando o saldo muda) e `WagerTransactionPendingReference`.
+
+## Estrutura
+
+```
+src/
+  domain/          entidades, value objects (Money), regras e erros de domínio. TS puro.
+  application/     casos de uso e ports. Orquestra; não conhece Nest, ORM nem SQS.
+  infrastructure/  MikroORM, migrations, adapter SQS, logger, métricas, health checks.
+  interfaces/      HTTP (controllers, validação, erros), consumidor SQS, workers.
+test/
+  unit/  integration/  concurrency/  lint/  support/
+```
+
+As fronteiras entre camadas são verificadas pelo lint (`test/lint/layer-boundaries.test.ts`).
+
+---
+
+# Enunciado do desafio
 
 Technical Challenge — Distributed Wagering Processor
 Bem-vindo à Jungle Gaming 🦧
