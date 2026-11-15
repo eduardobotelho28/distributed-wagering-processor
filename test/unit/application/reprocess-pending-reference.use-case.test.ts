@@ -63,6 +63,26 @@ describe("pending reference backoff", () => {
 });
 
 describe("ReprocessPendingReferenceUseCase", () => {
+  test("events of a resolved reversal keep the correlationId of the original request", async () => {
+    const { fixture, reprocess, pendingId } = await pendingRefund("bet-corr");
+    await fixture.useCase.execute(
+      fixture.input({ externalTransactionId: "bet-corr", money: brl("30.00") }),
+    );
+    advanceToNextAttempt(fixture, pendingId);
+
+    await reprocess.execute();
+
+    const workerEvents = fixture.unitOfWork.repositories.outbox.messages.filter(
+      (message) =>
+        message.aggregateId === pendingId &&
+        message.eventType !== "WagerTransactionPendingReference",
+    );
+    expect(workerEvents.length).toBeGreaterThan(0);
+    for (const message of workerEvents) {
+      expect(message.payload).toMatchObject({ correlationId: "corr-1", causationId: pendingId });
+    }
+  });
+
   test("is idle while no pending transaction is due", async () => {
     const { reprocess } = await pendingRefund();
 

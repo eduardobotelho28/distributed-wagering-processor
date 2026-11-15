@@ -6,6 +6,7 @@ import { Money } from "../../../src/domain/money/money";
 import { TransactionKind } from "../../../src/domain/transaction/transaction-kind";
 import { TransactionStatus } from "../../../src/domain/transaction/transaction-status";
 import { MikroOrmUnitOfWork } from "../../../src/infrastructure/persistence/mikro-orm-unit-of-work";
+import { OutboxMessageSchema } from "../../../src/infrastructure/persistence/models/outbox-message.model";
 import { WagerTransactionRepository } from "../../../src/infrastructure/persistence/repositories/wager-transaction.repository";
 import { UuidV7IdGenerator } from "../../../src/infrastructure/time/uuid-v7-id-generator";
 import { FixedClock } from "../../support/fakes";
@@ -70,6 +71,16 @@ describe("ReprocessPendingReference against Postgres", () => {
       refund.transactionId,
     );
     expect(stored?.status).toBe(TransactionStatus.PROCESSED);
+    const workerEvents = await db.orm.em
+      .fork()
+      .find(OutboxMessageSchema, { aggregateId: refund.transactionId });
+    const processedEvent = workerEvents.find(
+      (row) => row.eventType === "WagerTransactionProcessed",
+    );
+    expect(processedEvent?.payload).toMatchObject({
+      correlationId: "corr-1",
+      causationId: refund.transactionId,
+    });
     await assertLedgerInvariant(db.orm.em.fork(), wallet.id);
   });
 });

@@ -25,11 +25,17 @@ export interface WagerTransactionPersistenceState {
 export interface StoredWagerTransaction {
   transaction: WagerTransaction;
   state: WagerTransactionPersistenceState;
+  // Correlação da requisição/mensagem que gravou a transação; null em linhas antigas.
+  correlationId: string | null;
 }
 
 export interface WagerTransactionRepositoryPort {
   // Lança DuplicateIdempotencyKeyError quando a key já foi gravada por outra transação.
-  insert(transaction: WagerTransaction, state?: WagerTransactionPersistenceState): Promise<void>;
+  insert(
+    transaction: WagerTransaction,
+    state?: WagerTransactionPersistenceState,
+    correlationId?: string | null,
+  ): Promise<void>;
   update(transaction: WagerTransaction, state?: WagerTransactionPersistenceState): Promise<void>;
   findById(id: string): Promise<WagerTransaction | null>;
   findByIdempotencyKey(idempotencyKey: string): Promise<StoredWagerTransaction | null>;

@@ -102,7 +102,11 @@ export class InMemoryWalletRepository implements WalletRepositoryPort {
 export class InMemoryWagerTransactionRepository implements WagerTransactionRepositoryPort {
   readonly rows = new Map<string, StoredWagerTransaction>();
 
-  async insert(transaction: WagerTransaction, state = EMPTY_STATE): Promise<void> {
+  async insert(
+    transaction: WagerTransaction,
+    state = EMPTY_STATE,
+    correlationId: string | null = null,
+  ): Promise<void> {
     if ((await this.findByIdempotencyKey(transaction.idempotencyKey)) !== null) {
       throw new DuplicateIdempotencyKeyError(transaction.idempotencyKey);
     }
@@ -110,11 +114,12 @@ export class InMemoryWagerTransactionRepository implements WagerTransactionRepos
     if ((await this.findByProviderAndExternalId(providerId, externalTransactionId)) !== null) {
       throw new DuplicateExternalTransactionError(providerId, externalTransactionId);
     }
-    this.rows.set(transaction.id, { transaction, state });
+    this.rows.set(transaction.id, { transaction, state, correlationId });
   }
 
   async update(transaction: WagerTransaction, state = EMPTY_STATE): Promise<void> {
-    this.rows.set(transaction.id, { transaction, state });
+    const correlationId = this.rows.get(transaction.id)?.correlationId ?? null;
+    this.rows.set(transaction.id, { transaction, state, correlationId });
   }
 
   async findById(id: string): Promise<WagerTransaction | null> {

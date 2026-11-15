@@ -48,6 +48,7 @@ export function wagerTransactionStateOf(
 export function wagerTransactionToModel(
   transaction: WagerTransaction,
   state: WagerTransactionPersistenceState = EMPTY_PERSISTENCE_STATE,
+  correlationId: string | null = null,
 ): WagerTransactionModel {
   return {
     id: transaction.id,
@@ -69,6 +70,7 @@ export function wagerTransactionToModel(
     failureCode: transaction.failureCode,
     pendingAttempts: state.pendingAttempts,
     nextAttemptAt: state.nextAttemptAt === null ? null : new Date(state.nextAttemptAt),
+    correlationId,
     processedAt: transaction.processedAt,
     createdAt: transaction.createdAt,
   };

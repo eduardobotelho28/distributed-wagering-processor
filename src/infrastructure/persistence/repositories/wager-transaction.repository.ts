@@ -44,7 +44,11 @@ function isViolationOf(error: unknown, constraint: string): boolean {
 }
 
 function toStored(model: WagerTransactionModel): StoredWagerTransaction {
-  return { transaction: wagerTransactionToDomain(model), state: wagerTransactionStateOf(model) };
+  return {
+    transaction: wagerTransactionToDomain(model),
+    state: wagerTransactionStateOf(model),
+    correlationId: model.correlationId ?? null,
+  };
 }
 
 // DECISION: mesma política do WalletRepository: leituras fora do identity map, escritas nativas.
@@ -57,9 +61,11 @@ export class WagerTransactionRepository implements WagerTransactionRepositoryPor
   async insert(
     transaction: WagerTransaction,
     state: WagerTransactionPersistenceState = EMPTY_PERSISTENCE_STATE,
+    correlationId: string | null = null,
   ): Promise<void> {
     try {
-      await this.em.insert(WagerTransactionSchema, wagerTransactionToModel(transaction, state));
+      const model = wagerTransactionToModel(transaction, state, correlationId);
+      await this.em.insert(WagerTransactionSchema, model);
     } catch (error) {
       if (isViolationOf(error, IDEMPOTENCY_KEY_CONSTRAINT)) {
         throw new DuplicateIdempotencyKeyError(transaction.idempotencyKey);

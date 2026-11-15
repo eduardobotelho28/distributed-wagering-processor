@@ -67,8 +67,9 @@ export class WagerSubmission {
     const now = this.clock.now();
     const transaction = this.buildTransaction(input, payloadHash, now);
     const events = new SubmissionEvents(repositories.outbox, this.ids, input.context, now);
+    const correlationId = input.context.correlationId;
     const save = (stored: WagerTransaction, state: WagerTransactionPersistenceState) =>
-      repositories.transactions.insert(stored, state);
+      repositories.transactions.insert(stored, state, correlationId);
     if (wallet === null) {
       return rejectTransaction({ transaction, events, save }, FailureCode.WALLET_NOT_FOUND, null);
     }
@@ -78,7 +79,7 @@ export class WagerSubmission {
       wallet,
       events,
       save,
-      onUnresolvedReference: () => pendReference(repositories, transaction, events),
+      onUnresolvedReference: () => pendReference(save, transaction, events),
     });
   }
 
@@ -125,7 +126,7 @@ export class WagerSubmission {
     const events = new SubmissionEvents(repositories.outbox, this.ids, input.context, now);
     const failureCode = FailureCode.INTERNAL_PERMANENT_ERROR;
     transaction.fail(failureCode);
-    await repositories.transactions.insert(transaction, settled(null));
+    await repositories.transactions.insert(transaction, settled(null), input.context.correlationId);
     await events.rejected(transaction, failureCode);
     return failed(transaction.id, failureCode, false);
   }
@@ -190,12 +191,12 @@ export async function runWithRecovery<TResult>(
 }
 
 async function pendReference(
-  repositories: TransactionalRepositories,
+  save: (transaction: WagerTransaction, state: WagerTransactionPersistenceState) => Promise<void>,
   transaction: WagerTransaction,
   events: SubmissionEvents,
 ): Promise<RecordedSubmitResult> {
   transaction.markPendingReference();
-  await repositories.transactions.insert(transaction, {
+  await save(transaction, {
     resultingBalance: null,
     pendingAttempts: 0,
     nextAttemptAt: nextPendingAttemptAt(0, events.now),

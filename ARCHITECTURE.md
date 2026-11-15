@@ -457,11 +457,12 @@ carteira com milhões de lançamentos isso bloquearia as apostas durante a soma.
 saldo de checkpoint por período (soma até o último checkpoint + lançamentos depois dele), ou
 reconciliar a partir de uma réplica num ponto consistente.
 
-### 5.5 Correlação perdida no reprocessamento
+### 5.5 Correlação no reprocessamento (resolvida)
 
-O `correlationId` da requisição original não é gravado no banco. Eventos emitidos pelo worker de
-`PENDING_REFERENCE` (minutos depois) correlacionam pelo id da transação, não pelo id da
-requisição que a criou. Correção: uma coluna `correlation_id` em `wager_transactions`.
+O `correlationId` da requisição ou mensagem que criou a transação fica em
+`wager_transactions.correlation_id`. Eventos emitidos pelo worker de `PENDING_REFERENCE`
+(minutos depois, em outro processo) herdam esse valor e usam a transação pendente como
+`causationId`. Linhas gravadas antes da coluna correlacionam pelo id da transação.
 
 ### 5.6 Consumidor processa uma mensagem por vez por instância
 
