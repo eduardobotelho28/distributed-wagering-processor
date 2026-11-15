@@ -123,6 +123,7 @@ docker compose exec app bun run test:unit        # domínio, casos de uso, mapea
 docker compose exec app bun run test:integration # Postgres + LocalStack reais (~40s)
 docker compose exec app bun run test:concurrency # várias instâncias reais do app (~70s)
 docker compose exec app bun test                 # tudo (~2min)
+docker compose exec app bun run test:load        # teste de carga, ver LOAD_TEST.md (~2min)
 ```
 
 Sem a stack no ar, troque `exec` por `run --rm` (o Compose sobe Postgres e LocalStack antes).
