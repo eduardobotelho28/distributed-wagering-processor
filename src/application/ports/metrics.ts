@@ -21,6 +21,7 @@ export interface CounterLabels {
 export interface HistogramLabels {
   wager_processing_duration_seconds: { channel: Channel };
   outbox_publish_lag_seconds: Record<string, never>;
+  wallet_lock_wait_seconds: Record<string, never>;
 }
 
 export type Channel = "http" | "sqs" | "reprocess";

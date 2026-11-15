@@ -158,6 +158,7 @@ interrompe o processo listando todas as falhas.
 | `OUTBOX_BATCH_SIZE` | `50` | Eventos por rodada do publisher |
 | `PENDING_REFERENCE_BATCH_SIZE` | `50` | Pendências por rodada do worker |
 | `SQS_MAX_MESSAGES` | `10` | Mensagens por receive (máx. 10) |
+| `DATABASE_LOCK_TIMEOUT_MS` | `10000` | `lock_timeout` de cada transação; estourado vira 503 retryable (HTTP) ou retry (SQS) |
 
 `POSTGRES_*`, `POSTGRES_PORT` e `LOCALSTACK_PORT` configuram só os containers de infraestrutura.
 

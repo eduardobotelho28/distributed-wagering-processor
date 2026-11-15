@@ -42,6 +42,11 @@ const HISTOGRAMS: Record<HistogramName, { help: string; labelNames: string[]; bu
       labelNames: [],
       buckets: [0.01, 0.05, 0.1, 0.5, 1, 5, 15, 60, 300],
     },
+    wallet_lock_wait_seconds: {
+      help: "Time waiting for the wallet row lock (SELECT ... FOR UPDATE)",
+      labelNames: [],
+      buckets: [0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 2.5, 5, 10],
+    },
   };
 
 const COUNTER_NAMES: readonly CounterName[] = [
@@ -56,6 +61,7 @@ const COUNTER_NAMES: readonly CounterName[] = [
 const HISTOGRAM_NAMES: readonly HistogramName[] = [
   "wager_processing_duration_seconds",
   "outbox_publish_lag_seconds",
+  "wallet_lock_wait_seconds",
 ];
 
 // DECISION: registry próprio em vez do global do prom-client; testes criam instâncias isoladas

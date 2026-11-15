@@ -110,6 +110,13 @@ processam".
 | Lock global / fila única por processo | Mata o paralelismo entre carteiras diferentes e não funciona com várias instâncias. |
 | Advisory lock do Postgres | Funciona, mas é um segundo mecanismo de coordenação fora da linha que já precisa ser travada. |
 
+**Espera limitada:** cada transação roda com `SET LOCAL lock_timeout` (padrão 10s,
+`DATABASE_LOCK_TIMEOUT_MS`). Sem limite, uma carteira presa (transação travada, conexão
+pendurada) seguraria todas as requisições dela até esgotar o pool. Estourado, o Postgres
+devolve `55P03`, que é transitório: 503 + `Retry-After` no HTTP, retry com backoff no SQS, e
+conta em `lock_conflicts_total{kind="lock_timeout"}`. O valor é bem maior que a fila normal de
+uma carteira quente (50 apostas simultâneas em 3 instâncias passam com folga).
+
 O `version` da carteira existe e é incrementado a cada movimentação, mas como contador, não
 como mecanismo de concorrência. A reconciliação também lê com a carteira travada: em READ
 COMMITTED, duas leituras sem lock poderiam ver commits diferentes e acusar divergência falsa.
@@ -271,8 +278,10 @@ Tudo que é tempo é injetado por `Clock`, então os testes avançam o relógio 
   valores monetários não vão para o log; a única exceção deliberada é a diferença da
   reconciliação, que o enunciado pede para logar.
 - Métricas Prometheus em `GET /metrics`: transações por status e canal, duplicatas (inbox e
-  key), retries por tipo, DLQ por código, conflitos de lock, lag do outbox, latência de
-  processamento e divergências de reconciliação. Nomes e labels são uniões fechadas no código.
+  key), retries por tipo, DLQ por código, conflitos de lock (deadlock, serialização e
+  `lock_timeout`), **tempo de espera pelo lock da carteira** (`wallet_lock_wait_seconds`, o sinal
+  de carteira disputada mesmo quando nada falha), lag do outbox, latência de processamento e
+  divergências de reconciliação. Nomes e labels são uniões fechadas no código.
 - `/health/live` não toca dependências; `/health/ready` faz `select 1` e `GetQueueUrl` reais.
 
 ### 2.15 Decisões menores
