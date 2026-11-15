@@ -13,6 +13,7 @@
     "test:unit": "bun test test/unit test/lint",
     "test:integration": "bun test test/integration",
     "test:concurrency": "bun test test/concurrency",
+    "test:load": "bun test/load/run-load.ts",
     "migration:create": "mikro-orm migration:create",
     "migration:up": "mikro-orm migration:up",
     "migration:down": "mikro-orm migration:down"

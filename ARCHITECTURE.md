@@ -454,7 +454,17 @@ shutdown, cada instância trata o lote em sequência. A vazão do SQS escala com
 instâncias (o SQS distribui os grupos), não com concorrência dentro do processo. Uma melhoria
 seria processar grupos diferentes em paralelo dentro do mesmo lote.
 
-### 5.7 O que ficou de fora e por quê
+### 5.7 Vazão do publisher do outbox
+
+Medido no teste de carga ([LOAD_TEST.md](LOAD_TEST.md)): o caminho de escrita sustenta ~280
+apostas/s (~560 eventos/s) nesta máquina, mas o publisher, na configuração padrão, drena ~100 a
+150 eventos/s, porque cada instância envia no máximo 50 por rodada de 1 s, um `SendMessage` por
+evento, em sequência e segurando as linhas travadas. Sob carga sustentada o lag do outbox cresce
+para minutos. Nenhum evento se perde, mas os consumidores atrasam. Correção: `SendMessageBatch`
+(10 por chamada), envio fora do lock das linhas já reservadas e publisher em instâncias
+dedicadas.
+
+### 5.8 O que ficou de fora e por quê
 
 | Item | Motivo |
 |---|---|
@@ -464,9 +474,8 @@ seria processar grupos diferentes em paralelo dentro do mesmo lote.
 | `occurredAt` do provedor | Validado na mensagem, mas não gravado; o sistema usa o relógio do servidor. |
 | Gauge de idade do outbox | O lag é medido no momento da publicação; um evento parado só aparece quando sai. Um gauge do pendente mais antigo exigiria uma consulta a mais por rodada. |
 | `/metrics` autenticado | Aberto como o health; em produção ficaria atrás do ingress interno. |
-| Teste de carga | Os testes de concorrência provam corretude (até 160 requisições simultâneas, 3 instâncias), não vazão. |
 
-### 5.8 Como as falhas foram testadas
+### 5.9 Como as falhas foram testadas
 
 Os testes rodam dentro do container `app`, sem acesso ao Docker. Por isso "Postgres fora" é
 simulado bloqueando as conexões do banco descartável da instância (`ALLOW_CONNECTIONS false` +
