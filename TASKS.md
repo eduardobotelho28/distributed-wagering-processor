@@ -464,7 +464,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   Verify, with evidence (grep/test names), each eliminatory failure from the README: no `number` money, no negative balance race, no duplicate debit/credit, no in-memory idempotency, correct with multiple instances, no event before commit, auditable ledger, no full mocks of Postgres/SQS.
   Done when: checklist added to ARCHITECTURE.md with links to tests.
 
-- [ ] **T101 (Optional) Load test**
+- [x] **T101 (Optional) Load test** (e001c11)
   `bun run test:load`: environment, methodology, throughput, p50/p95/p99, error rate, lock conflicts, outbox lag, and an honest analysis.
   Done when: results documented, numbers reproducible.
 
