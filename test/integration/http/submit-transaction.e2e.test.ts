@@ -82,6 +82,25 @@ describe("POST /wagering/transactions", () => {
     expect(reply.body).toMatchObject({ code: "IDEMPOTENCY_CONFLICT", retryable: false });
   });
 
+  test("409 EXTERNAL_TRANSACTION_ID_CONFLICT when the same externalTransactionId comes under another key", async () => {
+    const walletId = await createWalletOver(app, "100.00");
+    const externalTransactionId = crypto.randomUUID();
+    const first = await submitTransaction(app, walletId, { externalTransactionId });
+
+    const reply = await submitTransaction(app, walletId, {
+      externalTransactionId,
+      idempotencyKey: `another-key:${externalTransactionId}`,
+    });
+
+    expect(first.status).toBe(201);
+    expect(reply.status).toBe(409);
+    expect(reply.body).toMatchObject({
+      code: "EXTERNAL_TRANSACTION_ID_CONFLICT",
+      retryable: false,
+    });
+    await assertLedgerInvariant(app.db.orm.em.fork(), walletId);
+  });
+
   test.each([
     ["missing Idempotency-Key header", { idempotencyKey: null }, "IDEMPOTENCY_KEY_REQUIRED"],
     ["OPENING from outside", { kind: "OPENING" }, "OPENING_NOT_ALLOWED"],

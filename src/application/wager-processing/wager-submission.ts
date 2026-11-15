@@ -10,6 +10,7 @@ import { TransactionStatus } from "../../domain/transaction/transaction-status";
 import { WagerTransaction } from "../../domain/transaction/wager-transaction";
 import { InsufficientFundsError } from "../../domain/wallet/insufficient-funds.error";
 import type { Clock } from "../ports/clock";
+import { DuplicateExternalTransactionError } from "../ports/duplicate-external-transaction.error";
 import { DuplicateIdempotencyKeyError } from "../ports/duplicate-idempotency-key.error";
 import type { EventContext } from "../ports/event-context";
 import type { IdGenerator } from "../ports/id-generator";
@@ -61,8 +62,8 @@ export class WagerSubmission {
   ): Promise<RecordedSubmitResult> {
     const wallet = await repositories.wallets.findByIdForUpdate(input.walletId);
     const payloadHash = computePayloadHash(input);
-    const existing = await repositories.transactions.findByIdempotencyKey(input.idempotencyKey);
-    if (existing !== null) return replayOrConflict(existing, payloadHash);
+    const recorded = await findRecorded(repositories, input, payloadHash);
+    if (recorded !== null) return recorded;
     const now = this.clock.now();
     const transaction = this.buildTransaction(input, payloadHash, now);
     const events = new SubmissionEvents(repositories.outbox, this.ids, input.context, now);
@@ -95,6 +96,19 @@ export class WagerSubmission {
     return replayOrConflict(existing, computePayloadHash(input));
   }
 
+  // DECISION: mesma operação do provedor (providerId, externalTransactionId) com outra key em
+  // paralelo: o UNIQUE(provider_id, external_transaction_id) decide e a perdedora relê numa
+  // transação nova, como na corrida de key.
+  async resolveExternalIdRace(
+    repositories: TransactionalRepositories,
+    input: SubmitWagerTransactionInput,
+    error: DuplicateExternalTransactionError,
+  ): Promise<RecordedSubmitResult> {
+    const recorded = await findRecorded(repositories, input, computePayloadHash(input));
+    if (recorded === null) throw error;
+    return recorded;
+  }
+
   // DECISION: erro de domínio no meio do processamento é bug determinístico; repetir daria o
   // mesmo erro. A transação original foi desfeita, então gravamos FAILED numa transação nova
   // para o provedor receber resposta terminal e o replay ser estável. Erros de driver/conexão
@@ -104,8 +118,8 @@ export class WagerSubmission {
     input: SubmitWagerTransactionInput,
   ): Promise<RecordedSubmitResult> {
     const payloadHash = computePayloadHash(input);
-    const existing = await repositories.transactions.findByIdempotencyKey(input.idempotencyKey);
-    if (existing !== null) return replayOrConflict(existing, payloadHash);
+    const recorded = await findRecorded(repositories, input, payloadHash);
+    if (recorded !== null) return recorded;
     const now = this.clock.now();
     const transaction = this.buildTransaction(input, payloadHash, now);
     const events = new SubmissionEvents(repositories.outbox, this.ids, input.context, now);
@@ -165,6 +179,9 @@ export async function runWithRecovery<TResult>(
     if (error instanceof DuplicateIdempotencyKeyError) {
       return run((repositories) => submission.resolveKeyRace(repositories, input, error));
     }
+    if (error instanceof DuplicateExternalTransactionError) {
+      return run((repositories) => submission.resolveExternalIdRace(repositories, input, error));
+    }
     if (isPermanentFailure(error)) {
       return run((repositories) => submission.recordFailure(repositories, input));
     }
@@ -185,6 +202,23 @@ async function pendReference(
   });
   await events.pendingReference(transaction, requireReferenceExternalId(transaction));
   return { outcome: "pendingReference", transactionId: transaction.id, idempotentReplay: false };
+}
+
+// DECISION: a key decide o replay; sem key gravada, o mesmo (providerId, externalTransactionId)
+// sob outra key é conflito. Sem isso o insert colidiria no UNIQUE e viraria erro 500.
+async function findRecorded(
+  repositories: TransactionalRepositories,
+  input: SubmitWagerTransactionInput,
+  payloadHash: string,
+): Promise<RecordedSubmitResult | null> {
+  const byKey = await repositories.transactions.findByIdempotencyKey(input.idempotencyKey);
+  if (byKey !== null) return replayOrConflict(byKey, payloadHash);
+  const byExternalId = await repositories.transactions.findByProviderAndExternalId(
+    input.providerId,
+    input.externalTransactionId,
+  );
+  if (byExternalId === null) return null;
+  return { outcome: "externalIdConflict", transactionId: byExternalId.id, idempotentReplay: false };
 }
 
 // DECISION: o replay responde com o saldo gravado em resulting_balance no momento do

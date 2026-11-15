@@ -28,6 +28,7 @@ import {
 //                                                                   + DLQ com motivo + ack
 //   mensagem malformada / payload inválido / OPENING  permanente    DLQ com motivo + ack
 //   idempotencyConflict (mesma key, outro payload)    permanente    DLQ com motivo + ack
+//   externalIdConflict (mesmo id externo, outra key)  permanente    DLQ com motivo + ack
 //   failed (INTERNAL_PERMANENT_ERROR, já gravado)     permanente    DLQ com motivo + ack
 //
 // DECISION: exceção inesperada é tratada como transitória. Repetir até o limite custa poucas
@@ -52,6 +53,11 @@ export function classifyResult(result: ConsumeWagerMessageResult): Disposition {
       return { kind: "ack" };
     case "idempotencyConflict":
       return deadLetter("IDEMPOTENCY_CONFLICT", "key reused with another payload");
+    case "externalIdConflict":
+      return deadLetter(
+        "EXTERNAL_TRANSACTION_ID_CONFLICT",
+        "externalTransactionId reused under another idempotency key",
+      );
     case "invalidPayload":
       return deadLetter(submit.reason, "invalid transaction payload");
     case "failed":

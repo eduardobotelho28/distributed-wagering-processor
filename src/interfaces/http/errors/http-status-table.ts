@@ -5,6 +5,7 @@
 //   sem autenticação (com IdP ligado)          401     UNAUTHENTICATED         false
 //   recurso não encontrado                     404     <RECURSO>_NOT_FOUND     false
 //   conflito de idempotência / duplicidade     409     IDEMPOTENCY_CONFLICT    false
+//                                                      EXTERNAL_TRANSACTION_ID_CONFLICT false
 //                                                      WALLET_ALREADY_EXISTS   false
 //   rejeição de regra de negócio (e replay)    422     <FailureCode>           false
 //   aceito com referência pendente             202     (corpo da transação)    -

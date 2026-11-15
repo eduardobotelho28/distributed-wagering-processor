@@ -45,6 +45,13 @@ export interface IdempotencyConflictSubmitResult extends SubmitResultBase {
   outcome: "idempotencyConflict";
 }
 
+// DECISION: o mesmo (providerId, externalTransactionId) com OUTRA idempotency key também é
+// conflito, não replay: a key é a fonte da verdade do replay, e duas keys para a mesma operação
+// do provedor indicam erro do cliente. transactionId aponta a transação já gravada.
+export interface ExternalIdConflictSubmitResult extends SubmitResultBase {
+  outcome: "externalIdConflict";
+}
+
 // DECISION: rejeição de negócio e pendência são resultados, não exceções; HTTP e SQS mapeiam
 // cada `outcome` para a sua resposta sem interpretar mensagem de erro.
 // Resultados que correspondem a uma transação gravada (ou já existente para a key).
@@ -53,6 +60,7 @@ export type RecordedSubmitResult =
   | RejectedSubmitResult
   | PendingReferenceSubmitResult
   | IdempotencyConflictSubmitResult
+  | ExternalIdConflictSubmitResult
   | FailedSubmitResult;
 
 export type SubmitResult = RecordedSubmitResult | InvalidPayloadSubmitResult;

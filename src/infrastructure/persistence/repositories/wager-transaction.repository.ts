@@ -3,6 +3,7 @@ import {
   LockMode,
   UniqueConstraintViolationException,
 } from "@mikro-orm/postgresql";
+import { DuplicateExternalTransactionError } from "../../../application/ports/duplicate-external-transaction.error";
 import { DuplicateIdempotencyKeyError } from "../../../application/ports/duplicate-idempotency-key.error";
 import type {
   StoredWagerTransaction,
@@ -34,14 +35,12 @@ function toDomainOrNull(model: WagerTransactionModel | null): WagerTransaction |
 }
 
 const IDEMPOTENCY_KEY_CONSTRAINT = "wager_transactions_idempotency_key_unique";
+const PROVIDER_EXTERNAL_CONSTRAINT = "wager_transactions_provider_external_unique";
 
 // RISK: o MikroORM não expõe o nome da constraint em campo tipado; ele vem na mensagem do
-// Postgres. O teste idempotency-key-race quebra se o formato mudar.
-function isIdempotencyKeyViolation(error: unknown): boolean {
-  return (
-    error instanceof UniqueConstraintViolationException &&
-    error.message.includes(IDEMPOTENCY_KEY_CONSTRAINT)
-  );
+// Postgres. Os testes idempotency-key-race e external-id-conflict quebram se o formato mudar.
+function isViolationOf(error: unknown, constraint: string): boolean {
+  return error instanceof UniqueConstraintViolationException && error.message.includes(constraint);
 }
 
 function toStored(model: WagerTransactionModel): StoredWagerTransaction {
@@ -62,8 +61,14 @@ export class WagerTransactionRepository implements WagerTransactionRepositoryPor
     try {
       await this.em.insert(WagerTransactionSchema, wagerTransactionToModel(transaction, state));
     } catch (error) {
-      if (isIdempotencyKeyViolation(error)) {
+      if (isViolationOf(error, IDEMPOTENCY_KEY_CONSTRAINT)) {
         throw new DuplicateIdempotencyKeyError(transaction.idempotencyKey);
+      }
+      if (isViolationOf(error, PROVIDER_EXTERNAL_CONSTRAINT)) {
+        throw new DuplicateExternalTransactionError(
+          transaction.providerId,
+          transaction.externalTransactionId,
+        );
       }
       throw error;
     }

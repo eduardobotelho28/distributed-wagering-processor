@@ -121,6 +121,22 @@ describe("submitResultToHttp", () => {
     expect(error.toBody()).toMatchObject({ code: "IDEMPOTENCY_CONFLICT", retryable: false });
   });
 
+  test("maps an external transaction id conflict to 409 with its own code", () => {
+    const error = thrownBy(() =>
+      submitResultToHttp({
+        outcome: "externalIdConflict",
+        transactionId: "tx-6",
+        idempotentReplay: false,
+      }),
+    );
+
+    expect(error.status).toBe(409);
+    expect(error.toBody()).toMatchObject({
+      code: "EXTERNAL_TRANSACTION_ID_CONFLICT",
+      retryable: false,
+    });
+  });
+
   test("maps an invalid payload to 400 with the specific reason", () => {
     const error = thrownBy(() =>
       submitResultToHttp({ outcome: "invalidPayload", reason: FailureCode.REFERENCE_REQUIRED }),

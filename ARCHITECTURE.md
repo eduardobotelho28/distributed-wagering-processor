@@ -131,6 +131,10 @@ COMMITTED, duas leituras sem lock poderiam ver commits diferentes e acusar diver
   (`resulting_balance` gravado na linha), com `idempotentReplay: true`. Replay de REJECTED
   responde 422 de novo. Replay não emite eventos.
 - **Mesma key + outro hash** → `409 IDEMPOTENCY_CONFLICT`; nada é gravado.
+- **Mesmo `(providerId, externalTransactionId)` sob outra key** → `409
+  EXTERNAL_TRANSACTION_ID_CONFLICT` (no SQS, DLQ com esse código); nada é gravado. A key decide
+  o replay; duas keys para a mesma operação do provedor são erro do cliente. Sob corrida, o
+  `UNIQUE (provider_id, external_transaction_id)` decide e a perdedora relê numa transação nova.
 - **Corrida entre carteiras:** a mesma key enviada ao mesmo tempo para duas carteiras não
   serializa no lock (são linhas distintas). O `UNIQUE` decide: a perdedora tem a transação
   abortada, e relemos a key numa transação nova. O Postgres só acusa a violação depois que a
@@ -187,7 +191,7 @@ Mesmo mapeamento em todos os endpoints; corpo de erro `{ code, message, retryabl
 | referência pendente | 202 | — |
 | payload inválido, header ausente, id malformado | 400 | false |
 | não encontrado | 404 | false |
-| conflito de idempotência, carteira duplicada | 409 | false |
+| conflito de idempotência, id externo sob outra key, carteira duplicada | 409 | false |
 | rejeição de negócio (também no replay) | 422 | false |
 | `FAILED` (erro interno permanente) | 500 | false |
 | falha transitória (conexão, deadlock, lock timeout, serialização, pool esgotado) | 503 + `Retry-After: 1` | **true** |
@@ -205,7 +209,7 @@ do campo, nunca o valor recebido.
 | exceção (banco fora, deadlock, lock timeout, erro inesperado) | transitória | sem ack; visibilidade com backoff |
 | exceção no limite de recebimentos | esgotada | grava `FAILED` (se possível) + DLQ com motivo + ack |
 | malformada, payload inválido, OPENING | permanente | DLQ com motivo + ack |
-| conflito de idempotência, `FAILED` já gravado | permanente | DLQ com motivo + ack |
+| conflito de idempotência ou de id externo, `FAILED` já gravado | permanente | DLQ com motivo + ack |
 
 Exceção inesperada é tratada como transitória: repetir até o limite custa poucas tentativas, e
 tratá-la como permanente mandaria para a DLQ algo que um restart do banco resolveria. A

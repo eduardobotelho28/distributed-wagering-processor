@@ -80,3 +80,43 @@ describe("idempotency key race across wallets", () => {
     }
   });
 });
+
+describe("external transaction id race under different keys", () => {
+  test("same externalTransactionId sent in parallel with two keys to two wallets: one processed, one conflict", async () => {
+    for (let round = 0; round < ROUNDS; round += 1) {
+      const [first, second] = [await newWallet(), await newWallet()];
+      const externalTransactionId = crypto.randomUUID();
+
+      const results = await Promise.all([
+        submit.execute({ ...bet(first, `key-a-${externalTransactionId}`), externalTransactionId }),
+        submit.execute({ ...bet(second, `key-b-${externalTransactionId}`), externalTransactionId }),
+      ]);
+
+      const outcomes = results.map((result) => result.outcome).sort();
+      expect(outcomes).toEqual(["externalIdConflict", "processed"]);
+      expect(results[0]?.transactionId).toBe(results[1]?.transactionId);
+      const rows = await db.orm.em
+        .fork()
+        .count(WagerTransactionSchema, { providerId: "provider-a", externalTransactionId });
+      expect(rows).toBe(1);
+      await assertLedgerInvariant(db.orm.em.fork(), first.id);
+      await assertLedgerInvariant(db.orm.em.fork(), second.id);
+    }
+  });
+
+  test("same externalTransactionId sent in parallel with two keys to one wallet: one debit", async () => {
+    for (let round = 0; round < ROUNDS; round += 1) {
+      const wallet = await newWallet();
+      const externalTransactionId = crypto.randomUUID();
+
+      const results = await Promise.all([
+        submit.execute({ ...bet(wallet, `key-a-${externalTransactionId}`), externalTransactionId }),
+        submit.execute({ ...bet(wallet, `key-b-${externalTransactionId}`), externalTransactionId }),
+      ]);
+
+      const outcomes = results.map((result) => result.outcome).sort();
+      expect(outcomes).toEqual(["externalIdConflict", "processed"]);
+      await assertLedgerInvariant(db.orm.em.fork(), wallet.id);
+    }
+  });
+});
