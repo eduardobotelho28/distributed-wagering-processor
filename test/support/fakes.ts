@@ -218,6 +218,12 @@ export class InMemoryInboxRepository implements InboxRepositoryPort {
 
   readonly processedIds: string[] = [];
 
+  async find(consumerName: string, messageId: string): Promise<InboxMessage | null> {
+    const match = (stored: InboxMessage) =>
+      stored.consumerName === consumerName && stored.messageId === messageId;
+    return this.messages.find(match) ?? null;
+  }
+
   async markProcessed(message: InboxMessage): Promise<void> {
     this.processedIds.push(message.messageId);
   }

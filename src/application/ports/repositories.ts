@@ -73,6 +73,7 @@ export interface LedgerRepositoryPort {
 
 export interface InboxRepositoryPort {
   tryInsert(message: InboxMessage): Promise<boolean>;
+  find(consumerName: string, messageId: string): Promise<InboxMessage | null>;
   markProcessed(message: InboxMessage): Promise<void>;
 }
 

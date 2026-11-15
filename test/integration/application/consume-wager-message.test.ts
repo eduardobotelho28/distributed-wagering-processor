@@ -86,6 +86,23 @@ describe("ConsumeWagerMessage against Postgres", () => {
     await assertLedgerInvariant(db.orm.em.fork(), wallet.id);
   });
 
+  test("the same messageId with another payload is a conflict and produces no effect", async () => {
+    const wallet = await newWallet("100.00");
+    const messageId = `msg-${crypto.randomUUID()}`;
+    const original = { consumerName: CONSUMER, messageId, submission: bet(wallet, messageId) };
+    await consume.execute(original);
+    const before = await effectsOf(wallet.id);
+
+    const reused = await consume.execute({
+      ...original,
+      submission: { ...original.submission, money: brl("99.00") },
+    });
+
+    expect(reused).toEqual({ outcome: "messageConflict" });
+    expect(await effectsOf(wallet.id)).toEqual(before);
+    await assertLedgerInvariant(db.orm.em.fork(), wallet.id);
+  });
+
   test("two simultaneous deliveries of the same message apply it once", async () => {
     const wallet = await newWallet("100.00");
     const messageId = `msg-${crypto.randomUUID()}`;

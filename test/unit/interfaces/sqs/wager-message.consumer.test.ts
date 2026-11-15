@@ -135,6 +135,13 @@ describe("consumer classification: permanent failures go to the DLQ path", () =>
     ).toMatchObject({ kind: "deadLetter", code: "IDEMPOTENCY_CONFLICT" });
   });
 
+  test("a messageId reused with another payload is permanent", () => {
+    expect(classifyResult({ outcome: "messageConflict" })).toMatchObject({
+      kind: "deadLetter",
+      code: "MESSAGE_ID_CONFLICT",
+    });
+  });
+
   test("an external transaction id conflict is permanent", () => {
     expect(
       classifyResult({

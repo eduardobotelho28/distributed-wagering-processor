@@ -213,6 +213,7 @@ do campo, nunca o valor recebido.
 |---|---|---|
 | processed, rejected, pendingReference | negócio | ack (depois do commit) |
 | duplicata no inbox | negócio | ack, sem efeito |
+| mesmo `messageId` com outro payload (hash do inbox diverge) | permanente | DLQ `MESSAGE_ID_CONFLICT` + ack, sem efeito |
 | exceção (banco fora, deadlock, lock timeout, erro inesperado) | transitória | sem ack; visibilidade com backoff |
 | exceção no limite de recebimentos | esgotada | grava `FAILED` (se possível) + DLQ com motivo + ack |
 | malformada, payload inválido, OPENING | permanente | DLQ com motivo + ack |
@@ -484,7 +485,6 @@ dedicadas.
 | Item | Motivo |
 |---|---|
 | Autenticação real (OIDC) | Permitido pelo enunciado; ponto de extensão pronto (seção 4). |
-| Mesmo `messageId` com payload diferente | Tratado como duplicata (ack sem efeito); o hash fica gravado no inbox, mas não é comparado. Poderia ir para a DLQ como conflito. |
 | `occurredAt` do provedor | Validado na mensagem, mas não gravado; o sistema usa o relógio do servidor. |
 | Gauge de idade do outbox | O lag é medido no momento da publicação; um evento parado só aparece quando sai. Um gauge do pendente mais antigo exigiria uma consulta a mais por rodada. |
 | `/metrics` autenticado | Aberto como o health; em produção ficaria atrás do ingress interno. |
