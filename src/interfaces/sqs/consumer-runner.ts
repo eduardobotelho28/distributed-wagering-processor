@@ -9,7 +9,7 @@ export interface RunnerOptions {
   errorBackoffMs: number;
 }
 
-// Laço de polling com parada graciosa (T75): stop() para de buscar, espera a mensagem em
+// Laço de polling com parada graciosa: stop() para de buscar, espera a mensagem em
 // andamento terminar e devolve as não iniciadas do lote; só então as conexões fecham.
 export class ConsumerRunner {
   private stopping = false;

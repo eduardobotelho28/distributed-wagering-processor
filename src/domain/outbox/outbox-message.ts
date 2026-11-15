@@ -1,6 +1,6 @@
 import { InvariantViolationError } from "../errors/invariant-violation.error";
 
-// DECISION: structural shape instead of importing IntegrationEvent (T29). Any event
+// DECISION: structural shape instead of importing IntegrationEvent. Any event
 // exposing these fields can be enqueued; the outbox stores the serialized envelope.
 export interface OutboxEvent {
   eventId: string;

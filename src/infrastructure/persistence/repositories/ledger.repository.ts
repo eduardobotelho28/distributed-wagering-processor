@@ -17,7 +17,7 @@ interface SummaryRow {
   entry_count: number;
 }
 
-// INVARIANT: só existe insert. O ledger é append-only; o trigger da migration T33 barra
+// INVARIANT: só existe insert. O ledger é append-only; o trigger wallet_ledger_entries_append_only barra
 // UPDATE/DELETE mesmo que alguém tente por fora deste repositório.
 export class LedgerRepository implements LedgerRepositoryPort {
   constructor(private readonly em: EntityManager) {}

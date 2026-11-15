@@ -17,8 +17,8 @@ export interface WalletLedgerEntryProps {
   createdAt: Date;
 }
 
-// INVARIANT: lançamento é imutável; correções são novos lançamentos. O banco reforça com
-// ausência de UPDATE/DELETE no repositório e o teste de invariante saldo == soma do ledger.
+// INVARIANT: lançamento é imutável; correções são novos lançamentos. O repositório só tem insert
+// e o trigger wallet_ledger_entries_append_only barra UPDATE/DELETE no banco.
 export class WalletLedgerEntry {
   private constructor(private readonly props: WalletLedgerEntryProps) {
     Object.freeze(this);

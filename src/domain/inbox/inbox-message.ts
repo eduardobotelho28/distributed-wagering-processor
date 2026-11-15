@@ -15,7 +15,7 @@ export interface ReceiveInboxMessageInput {
   receivedAt: Date;
 }
 
-// INVARIANT: (consumerName, messageId) é único; o banco garante com PK composta (T34).
+// INVARIANT: (consumerName, messageId) é único; o banco garante com a PK inbox_messages_pkey.
 // A deduplicação depende do banco, nunca desta entidade em memória.
 export class InboxMessage {
   private constructor(private props: InboxMessageProps) {}

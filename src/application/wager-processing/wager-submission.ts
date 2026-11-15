@@ -44,7 +44,7 @@ export interface SubmitWagerTransactionInput {
 
 // DECISION: o corpo da submissão recebe os repositórios da transação corrente em vez de abrir
 // a própria. HTTP roda só ele; o consumidor SQS envolve o mesmo corpo com o inbox, na MESMA
-// transação SQL (T72). Os dois canais executam exatamente a mesma lógica.
+// transação SQL. Os dois canais executam exatamente a mesma lógica.
 export class WagerSubmission {
   constructor(
     private readonly clock: Clock,

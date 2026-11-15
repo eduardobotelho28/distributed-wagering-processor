@@ -99,7 +99,8 @@ async function processReversal(context: ProcessingContext): Promise<RecordedSubm
   if (reference === null || isUnresolved(reference)) return context.onUnresolvedReference();
   const verdict = checkReversal(transaction, reference);
   if (!verdict.ok) return rejectTransaction(context, verdict.failureCode, wallet.balance);
-  // INVARIANT: também garantido pelo índice único parcial de reversão (migration T35);
+  // INVARIANT: também garantido pelo índice único parcial
+  // wager_transactions_single_reversal_per_reference_idx;
   // esta consulta só transforma a violação em REJECTED auditável.
   if ((await repositories.transactions.findProcessedReversalOf(reference.id)) !== null) {
     return rejectTransaction(context, FailureCode.REFERENCE_ALREADY_REVERSED, wallet.balance);

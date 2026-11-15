@@ -51,7 +51,7 @@ const DIRECT_DIRECTION: ReadonlyMap<TransactionKind, LedgerDirection> = new Map(
 ]);
 
 // DECISION: ROLLBACK desfaz a referência, então usa a direção inversa dela.
-// Só BET, WIN e REFUND podem ser revertidos; o caso de uso rejeita outros com INVALID_REFERENCE_KIND.
+// Só BET, WIN e REFUND podem ser revertidos; checkReversal rejeita os outros com INVALID_REFERENCE_KIND.
 const ROLLBACK_DIRECTION: ReadonlyMap<TransactionKind, LedgerDirection> = new Map([
   [TransactionKind.BET, LedgerDirection.CREDIT],
   [TransactionKind.WIN, LedgerDirection.DEBIT],
@@ -117,8 +117,6 @@ export class WagerTransaction {
     return TERMINAL_STATUSES.has(this.props.status);
   }
 
-  // DECISION: o id interno da referência só é conhecido quando ela é resolvida,
-  // por isso entra aqui e não no create.
   markProcessed(now: Date, referenceTransactionId: string | null): void {
     this.assertNotTerminal("markProcessed");
     this.props.status = TransactionStatus.PROCESSED;
