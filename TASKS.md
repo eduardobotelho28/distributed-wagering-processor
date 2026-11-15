@@ -460,7 +460,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   Review `DECISION` / `INVARIANT` / `RISK` comments in the vital files (Money, Wallet, Submit use case, repositories with locks, migrations, consumer, publisher). Remove comments that restate code.
   Done when: each vital file explains its reasoning.
 
-- [ ] **T100 Eliminatory checklist audit**
+- [x] **T100 Eliminatory checklist audit** (4645204)
   Verify, with evidence (grep/test names), each eliminatory failure from the README: no `number` money, no negative balance race, no duplicate debit/credit, no in-memory idempotency, correct with multiple instances, no event before commit, auditable ledger, no full mocks of Postgres/SQS.
   Done when: checklist added to ARCHITECTURE.md with links to tests.
 
