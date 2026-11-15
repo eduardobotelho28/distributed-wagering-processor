@@ -440,7 +440,7 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
 
 ## Phase 9: Documentation and polish
 
-- [ ] **T95 README.md**
+- [x] **T95 README.md** (03d47a9)
   Setup in one command (`docker compose up`), how to run each test suite, example `curl` calls, env vars.
   Done when: a fresh clone works following only the README.
 
