@@ -12,6 +12,7 @@ export interface WagerTransactionPendingReferenceData {
 
 export class WagerTransactionPendingReference extends IntegrationEvent<WagerTransactionPendingReferenceData> {
   readonly eventType = "WagerTransactionPendingReference";
+  readonly version = 1;
 
   static create(
     input: EventOrigin & {

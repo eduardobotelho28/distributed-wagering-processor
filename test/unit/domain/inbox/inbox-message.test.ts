@@ -14,6 +14,12 @@ const receive = (): InboxMessage =>
   });
 
 describe("InboxMessage", () => {
+  test("matches only the payload hash it was received with", () => {
+    const message = receive();
+    expect(message.matchesPayload("abc")).toBe(true);
+    expect(message.matchesPayload("other")).toBe(false);
+  });
+
   test("is born unprocessed with its identity", () => {
     const message = receive();
     expect(message.isProcessed()).toBe(false);

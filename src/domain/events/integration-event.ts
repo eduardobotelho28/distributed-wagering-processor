@@ -1,11 +1,9 @@
-export const INTEGRATION_EVENT_VERSION = 1;
-
 // DECISION: type alias em vez de interface para ser atribuível a Record<string, unknown>
 // (contrato OutboxEvent.toJSON) sem cast.
 export type IntegrationEventJSON<TData> = {
   eventId: string;
   eventType: string;
-  eventVersion: number;
+  version: number;
   aggregateId: string;
   correlationId: string;
   causationId: string | null;
@@ -29,8 +27,10 @@ export interface EventMetadata extends EventOrigin {
 // DECISION: `data` só aceita tipos serializáveis (MoneyJSON com strings), nunca Money.
 // O envelope vai para o outbox como JSON; carregar Money arriscaria serialização com perda.
 export abstract class IntegrationEvent<TData extends object> {
+  // DECISION: tipo e versão ficam na subclasse concreta, não numa string solta no call site;
+  // mudar o formato de `data` de um evento é subir a versão só dele.
   abstract readonly eventType: string;
-  readonly eventVersion = INTEGRATION_EVENT_VERSION;
+  abstract readonly version: number;
 
   readonly eventId: string;
   readonly occurredAt: Date;
@@ -55,7 +55,7 @@ export abstract class IntegrationEvent<TData extends object> {
     return {
       eventId: this.eventId,
       eventType: this.eventType,
-      eventVersion: this.eventVersion,
+      version: this.version,
       aggregateId: this.aggregateId,
       correlationId: this.correlationId,
       causationId: this.causationId,

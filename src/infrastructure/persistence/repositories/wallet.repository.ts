@@ -18,17 +18,26 @@ export class WalletNotPersistedError extends Error {
 
 // DECISION: leituras ignoram o identity map e escritas são nativas. O agregado de domínio é a
 // fonte do estado em memória; um modelo cacheado pelo ORM só abriria espaço para dado velho.
+export type LockWaitObserver = (seconds: number) => void;
+
 export class WalletRepository implements WalletRepositoryPort {
-  constructor(private readonly em: EntityManager) {}
+  constructor(
+    private readonly em: EntityManager,
+    private readonly onLockWait: LockWaitObserver = () => undefined,
+  ) {}
 
   // INVARIANT: precisa rodar dentro de uma transação; o MikroORM recusa lock fora dela.
   // DECISION: PESSIMISTIC_WRITE (SELECT ... FOR UPDATE) por carteira, nunca lock global.
+  // DECISION: mede o tempo até o lock ser concedido (wallet_lock_wait_seconds); é o sinal de
+  // carteira disputada. lock_conflicts_total só conta quando a espera vira erro (timeout).
   async findByIdForUpdate(id: string): Promise<Wallet | null> {
+    const startedAt = performance.now();
     const model = await this.em.findOne(
       WalletSchema,
       { id },
       { lockMode: LockMode.PESSIMISTIC_WRITE, disableIdentityMap: true },
     );
+    this.onLockWait((performance.now() - startedAt) / 1000);
     return model === null ? null : walletToDomain(model);
   }
 

@@ -468,6 +468,21 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   `bun run test:load`: environment, methodology, throughput, p50/p95/p99, error rate, lock conflicts, outbox lag, and an honest analysis.
   Done when: results documented, numbers reproducible.
 
+## Phase 10: Final tuning (branch refactor/final-tuning)
+
+- [x] **T103 External transaction id reused under another key** (3102c9a)
+  Same `(providerId, externalTransactionId)` with a different `Idempotency-Key` answers `409 EXTERNAL_TRANSACTION_ID_CONFLICT` (SQS: DLQ) instead of a 500.
+- [x] **T104 Player ownership** (b7304ad)
+  A transaction whose `playerId` is not the wallet owner is `REJECTED` with `PLAYER_MISMATCH`.
+- [x] **T105 Bounded lock wait** (a25d247)
+  `SET LOCAL lock_timeout` per transaction (`DATABASE_LOCK_TIMEOUT_MS`, default 10s) mapped to 503/retry; `wallet_lock_wait_seconds` histogram.
+- [x] **T106 Event contract** (cee094b)
+  `WalletBalanceChanged.from(wallet, entry, origin)` with `direction`, `money`, `walletVersion`; `version` declared per event.
+- [x] **T107 Inbox payload conflict** (172c261)
+  Same `messageId` with another payload goes to the DLQ as `MESSAGE_ID_CONFLICT`.
+- [x] **T108 Correlation on reprocess** (30b93f0)
+  `wager_transactions.correlation_id` (migration with `down`); reprocessed events keep the original correlation.
+
 - [ ] **T102 [HUMAN] Final review and submission**
   Read the whole diff, run everything from a clean clone, prepare the presentation talking points from the `DECISION` comments.
   Done when: submitted.

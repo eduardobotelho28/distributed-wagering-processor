@@ -33,6 +33,10 @@ export class InboxMessage {
     return new InboxMessage({ ...props });
   }
 
+  matchesPayload(payloadHash: string): boolean {
+    return this.props.payloadHash === payloadHash;
+  }
+
   isProcessed(): boolean {
     return this.props.processedAt !== null;
   }

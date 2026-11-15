@@ -1,5 +1,8 @@
 import { MikroORM } from "@mikro-orm/postgresql";
 import { Global, Module, type Provider } from "@nestjs/common";
+import type { Metrics } from "../application/ports/metrics";
+import type { AppConfig } from "../infrastructure/config/app-config";
+import { APP_CONFIG } from "../infrastructure/config/app-config.module";
 import { PrometheusMetrics } from "../infrastructure/observability/prometheus-metrics";
 import { JsonLogger } from "../infrastructure/observability/json-logger";
 import { MikroOrmUnitOfWork } from "../infrastructure/persistence/mikro-orm-unit-of-work";
@@ -10,8 +13,9 @@ import * as tokens from "./tokens";
 const providers: Provider[] = [
   {
     provide: tokens.UNIT_OF_WORK,
-    useFactory: (orm: MikroORM) => new MikroOrmUnitOfWork(orm),
-    inject: [MikroORM],
+    useFactory: (orm: MikroORM, config: AppConfig, metrics: Metrics) =>
+      new MikroOrmUnitOfWork(orm, { lockTimeoutMs: config.limits.lockTimeoutMs, metrics }),
+    inject: [MikroORM, APP_CONFIG, tokens.METRICS],
   },
   { provide: tokens.CLOCK, useValue: new SystemClock() },
   { provide: tokens.ID_GENERATOR, useValue: new UuidV7IdGenerator() },

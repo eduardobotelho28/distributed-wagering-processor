@@ -1,7 +1,7 @@
 import type { EntityManager } from "@mikro-orm/postgresql";
 import type { InboxRepositoryPort } from "../../../application/ports/repositories";
 import type { InboxMessage } from "../../../domain/inbox/inbox-message";
-import { inboxMessageToModel } from "../mappers/inbox-message.mapper";
+import { inboxMessageToDomain, inboxMessageToModel } from "../mappers/inbox-message.mapper";
 import { InboxMessageSchema } from "../models/inbox-message.model";
 
 export class InboxMessageNotPersistedError extends Error {
@@ -24,6 +24,15 @@ export class InboxRepository implements InboxRepositoryPort {
       .ignore()
       .execute("run");
     return result.affectedRows === 1;
+  }
+
+  async find(consumerName: string, messageId: string): Promise<InboxMessage | null> {
+    const model = await this.em.findOne(
+      InboxMessageSchema,
+      { consumerName, messageId },
+      { disableIdentityMap: true },
+    );
+    return model === null ? null : inboxMessageToDomain(model);
   }
 
   async markProcessed(message: InboxMessage): Promise<void> {

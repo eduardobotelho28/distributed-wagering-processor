@@ -13,6 +13,7 @@ export interface WagerTransactionRejectedData {
 
 export class WagerTransactionRejected extends IntegrationEvent<WagerTransactionRejectedData> {
   readonly eventType = "WagerTransactionRejected";
+  readonly version = 1;
 
   static create(
     input: EventOrigin & {

@@ -22,12 +22,14 @@ import {
 //   situação                                          classe        ação
 //   processed / rejected / pendingReference           negócio       ack (após commit)
 //   duplicate (inbox já tinha o messageId)            negócio       ack, sem efeito
+//   messageConflict (messageId, outro payload)        permanente    DLQ com motivo + ack
 //   exceção (banco fora, lock timeout, deadlock,      transitória   sem ack; visibilidade com
 //     erro inesperado), abaixo do limite                            backoff exponencial
 //   exceção no limite de recebimentos                 esgotada      FAILED gravado (se possível)
 //                                                                   + DLQ com motivo + ack
 //   mensagem malformada / payload inválido / OPENING  permanente    DLQ com motivo + ack
 //   idempotencyConflict (mesma key, outro payload)    permanente    DLQ com motivo + ack
+//   externalIdConflict (mesmo id externo, outra key)  permanente    DLQ com motivo + ack
 //   failed (INTERNAL_PERMANENT_ERROR, já gravado)     permanente    DLQ com motivo + ack
 //
 // DECISION: exceção inesperada é tratada como transitória. Repetir até o limite custa poucas
@@ -44,6 +46,9 @@ function deadLetter(code: string, reason: string): Disposition {
 
 export function classifyResult(result: ConsumeWagerMessageResult): Disposition {
   if (result.outcome === "duplicate") return { kind: "ack" };
+  if (result.outcome === "messageConflict") {
+    return deadLetter("MESSAGE_ID_CONFLICT", "messageId reused with another payload");
+  }
   const submit = result.result;
   switch (submit.outcome) {
     case "processed":
@@ -52,6 +57,11 @@ export function classifyResult(result: ConsumeWagerMessageResult): Disposition {
       return { kind: "ack" };
     case "idempotencyConflict":
       return deadLetter("IDEMPOTENCY_CONFLICT", "key reused with another payload");
+    case "externalIdConflict":
+      return deadLetter(
+        "EXTERNAL_TRANSACTION_ID_CONFLICT",
+        "externalTransactionId reused under another idempotency key",
+      );
     case "invalidPayload":
       return deadLetter(submit.reason, "invalid transaction payload");
     case "failed":
@@ -172,6 +182,10 @@ export class WagerMessageConsumer {
   }
 
   private recordConsumed(result: ConsumeWagerMessageResult, durationSeconds: number): void {
+    if (result.outcome === "messageConflict") {
+      this.deps.logger.warn("wager message id reused with another payload");
+      return;
+    }
     if (result.outcome === "duplicate") {
       this.deps.metrics.increment("duplicates_detected_total", { source: "inbox" });
       this.deps.logger.info("duplicate wager message acknowledged");

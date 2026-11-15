@@ -86,8 +86,10 @@ async function retryLater(attempt: Attempt): Promise<RecordedSubmitResult> {
   return { outcome: "pendingReference", transactionId: transaction.id, idempotentReplay: false };
 }
 
-// RISK: o correlationId da requisição original não é persistido; os eventos do
-// reprocessamento correlacionam pelo id da transação. Persistir o contexto exigiria coluna nova.
+// DECISION: os eventos do reprocessamento herdam o correlationId da requisição/mensagem
+// original (coluna correlation_id); a causa é a própria transação pendente. Linhas sem o
+// valor (anteriores à coluna) correlacionam pelo id da transação.
 function contextFor(stored: StoredWagerTransaction): EventContext {
-  return { correlationId: stored.transaction.id, causationId: null };
+  const transactionId = stored.transaction.id;
+  return { correlationId: stored.correlationId ?? transactionId, causationId: transactionId };
 }

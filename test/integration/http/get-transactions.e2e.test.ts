@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { field, type HttpTestApp, startHttpApp } from "../../support/http-app";
-import { createWalletOver, submitTransaction } from "../../support/http-scenario";
+import { createWalletOver, ownerOf, submitTransaction } from "../../support/http-scenario";
 
 let app: HttpTestApp;
 
@@ -30,7 +30,7 @@ describe("GET transaction endpoints", () => {
       id: transactionId,
       providerId: "provider-a",
       externalTransactionId,
-      playerId: "player-http",
+      playerId: ownerOf(walletId),
       walletId,
       roundId: "round-1",
       gameId: "fortune-test",

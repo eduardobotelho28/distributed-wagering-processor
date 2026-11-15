@@ -62,6 +62,12 @@ export function submitResultToHttp(
         "IDEMPOTENCY_CONFLICT",
         `idempotency key already used with a different payload by ${result.transactionId}`,
       );
+    case "externalIdConflict":
+      throw new ApiError(
+        HttpStatus.CONFLICT,
+        "EXTERNAL_TRANSACTION_ID_CONFLICT",
+        `externalTransactionId already recorded under another idempotency key by ${result.transactionId}`,
+      );
     case "invalidPayload":
       throw ApiError.invalidPayload(result.reason, "invalid transaction payload");
   }

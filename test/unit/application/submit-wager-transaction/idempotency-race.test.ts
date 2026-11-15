@@ -1,5 +1,16 @@
 import { describe, expect, test } from "bun:test";
+import type { InMemoryWagerTransactionRepository } from "../../../support/fakes";
 import { createSubmitFixture } from "../../../support/submit-fixture";
+
+// A vencedora ainda não commitou: nem a busca pela key nem a busca pelo id externo a enxergam.
+function hideFirstExternalIdLookup(transactions: InMemoryWagerTransactionRepository): void {
+  const realLookup = transactions.findByProviderAndExternalId.bind(transactions);
+  let lookups = 0;
+  transactions.findByProviderAndExternalId = async (providerId, externalId) => {
+    lookups += 1;
+    return lookups === 1 ? null : realLookup(providerId, externalId);
+  };
+}
 
 // Simula a corrida: a busca pela key não enxerga a vencedora (ainda não commitada) e o
 // insert colide no UNIQUE. O caminho real é provado contra Postgres no teste de integração.
@@ -15,6 +26,7 @@ describe("SubmitWagerTransaction idempotency key race", () => {
       lookups += 1;
       return lookups === 1 ? null : realLookup(key);
     };
+    hideFirstExternalIdLookup(transactions);
 
     const loser = await fixture.useCase.execute({ ...input, walletId: "another-wallet" });
 
@@ -36,6 +48,7 @@ describe("SubmitWagerTransaction idempotency key race", () => {
       lookups += 1;
       return lookups === 1 ? null : realLookup(key);
     };
+    hideFirstExternalIdLookup(transactions);
 
     const replay = await fixture.useCase.execute(input);
 

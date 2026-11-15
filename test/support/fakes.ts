@@ -13,6 +13,7 @@ import type {
   Metrics,
 } from "../../src/application/ports/metrics";
 import type { Clock } from "../../src/application/ports/clock";
+import { DuplicateExternalTransactionError } from "../../src/application/ports/duplicate-external-transaction.error";
 import { DuplicateIdempotencyKeyError } from "../../src/application/ports/duplicate-idempotency-key.error";
 import type { IdGenerator } from "../../src/application/ports/id-generator";
 import { InvalidLedgerCursorError } from "../../src/application/ports/invalid-ledger-cursor.error";
@@ -101,15 +102,24 @@ export class InMemoryWalletRepository implements WalletRepositoryPort {
 export class InMemoryWagerTransactionRepository implements WagerTransactionRepositoryPort {
   readonly rows = new Map<string, StoredWagerTransaction>();
 
-  async insert(transaction: WagerTransaction, state = EMPTY_STATE): Promise<void> {
+  async insert(
+    transaction: WagerTransaction,
+    state = EMPTY_STATE,
+    correlationId: string | null = null,
+  ): Promise<void> {
     if ((await this.findByIdempotencyKey(transaction.idempotencyKey)) !== null) {
       throw new DuplicateIdempotencyKeyError(transaction.idempotencyKey);
     }
-    this.rows.set(transaction.id, { transaction, state });
+    const { providerId, externalTransactionId } = transaction;
+    if ((await this.findByProviderAndExternalId(providerId, externalTransactionId)) !== null) {
+      throw new DuplicateExternalTransactionError(providerId, externalTransactionId);
+    }
+    this.rows.set(transaction.id, { transaction, state, correlationId });
   }
 
   async update(transaction: WagerTransaction, state = EMPTY_STATE): Promise<void> {
-    this.rows.set(transaction.id, { transaction, state });
+    const correlationId = this.rows.get(transaction.id)?.correlationId ?? null;
+    this.rows.set(transaction.id, { transaction, state, correlationId });
   }
 
   async findById(id: string): Promise<WagerTransaction | null> {
@@ -212,6 +222,12 @@ export class InMemoryInboxRepository implements InboxRepositoryPort {
   }
 
   readonly processedIds: string[] = [];
+
+  async find(consumerName: string, messageId: string): Promise<InboxMessage | null> {
+    const match = (stored: InboxMessage) =>
+      stored.consumerName === consumerName && stored.messageId === messageId;
+    return this.messages.find(match) ?? null;
+  }
 
   async markProcessed(message: InboxMessage): Promise<void> {
     this.processedIds.push(message.messageId);

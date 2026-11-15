@@ -32,6 +32,11 @@ interface Movement {
 // INVARIANT: chamado com a carteira já travada (PESSIMISTIC_WRITE) na transação corrente.
 export function processTransaction(context: ProcessingContext): Promise<RecordedSubmitResult> {
   const { transaction, wallet } = context;
+  // DECISION: dono antes de moeda; um payload para a carteira de outro jogador é o erro mais
+  // estrutural. A rejeição é gravada (auditável) e não move saldo.
+  if (transaction.playerId !== wallet.playerId) {
+    return rejectTransaction(context, FailureCode.PLAYER_MISMATCH, wallet.balance);
+  }
   if (transaction.money.currency !== wallet.currency) {
     return rejectTransaction(context, FailureCode.CURRENCY_MISMATCH, wallet.balance);
   }
@@ -86,7 +91,7 @@ async function applyMovement(
   await repositories.ledger.insert(entry);
   await repositories.wallets.saveBalance(wallet, now);
   await events.processed(transaction, wallet.balance);
-  await events.balanceChanged(entry);
+  await events.balanceChanged(wallet, entry);
   return processed(transaction, wallet.balance);
 }
 

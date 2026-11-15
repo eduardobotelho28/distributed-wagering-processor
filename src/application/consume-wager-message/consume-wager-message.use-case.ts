@@ -18,7 +18,9 @@ export interface ConsumeWagerMessageInput {
 }
 
 export type ConsumeWagerMessageResult =
-  { outcome: "duplicate" } | { outcome: "handled"; result: SubmitResult };
+  | { outcome: "duplicate" }
+  | { outcome: "messageConflict" }
+  | { outcome: "handled"; result: SubmitResult };
 
 export class ConsumeWagerMessageUseCase {
   private readonly submission: WagerSubmission;
@@ -61,10 +63,25 @@ export class ConsumeWagerMessageUseCase {
     });
     // DECISION: como inbox e processamento commitam juntos, "já existe" sempre significa "já
     // processado"; não há estado intermediário a retomar.
-    if (!(await repositories.inbox.tryInsert(message))) return { outcome: "duplicate" };
+    if (!(await repositories.inbox.tryInsert(message))) {
+      return this.duplicateOrConflict(repositories, message);
+    }
     const result = await step();
     message.markProcessed(this.clock.now());
     await repositories.inbox.markProcessed(message);
     return { outcome: "handled", result };
+  }
+
+  // DECISION: mesmo messageId com outro payload não é reentrega, é o produtor reaproveitando o
+  // id; vai para a DLQ como conflito em vez de ser confirmado em silêncio. Nada é gravado.
+  private async duplicateOrConflict(
+    repositories: TransactionalRepositories,
+    message: InboxMessage,
+  ): Promise<ConsumeWagerMessageResult> {
+    const stored = await repositories.inbox.find(message.consumerName, message.messageId);
+    if (stored === null || stored.matchesPayload(message.payloadHash)) {
+      return { outcome: "duplicate" };
+    }
+    return { outcome: "messageConflict" };
   }
 }

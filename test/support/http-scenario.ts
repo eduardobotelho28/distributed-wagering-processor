@@ -1,14 +1,24 @@
 import { field, type HttpReply, type HttpTestApp } from "./http-app";
 
+// A transação precisa vir com o playerId dono da carteira (senão é PLAYER_MISMATCH).
+// Carteira desconhecida (ex.: teste de WALLET_NOT_FOUND) recebe um jogador qualquer.
+const owners = new Map<string, string>();
+
+export function ownerOf(walletId: string): string {
+  return owners.get(walletId) ?? "player-without-wallet";
+}
+
 export async function createWalletOver(app: HttpTestApp, amount: string): Promise<string> {
+  const playerId = `player-${crypto.randomUUID()}`;
   const reply = await app.request("POST", "/wallets", {
     body: {
-      playerId: `player-${crypto.randomUUID()}`,
+      playerId,
       initialBalance: { amount, currency: "BRL" },
     },
   });
   const id = field(reply.body, "id");
   if (reply.status !== 201 || typeof id !== "string") throw new Error("wallet not created");
+  owners.set(id, playerId);
   return id;
 }
 
@@ -36,7 +46,7 @@ export function submitTransaction(
     body: {
       providerId: "provider-a",
       externalTransactionId,
-      playerId: "player-http",
+      playerId: ownerOf(walletId),
       walletId,
       roundId: "round-1",
       gameId: "fortune-test",

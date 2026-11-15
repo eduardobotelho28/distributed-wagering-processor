@@ -5,9 +5,10 @@ import {
   LockWaitTimeoutException,
 } from "@mikro-orm/postgresql";
 
-// SQLSTATE: 08xxx conexão, 40001 serialização, 40P01 deadlock, 53xxx recursos (conexões
+// SQLSTATE: 55P03 lock indisponível (lock_timeout), 08xxx conexão, 40001 serialização, 40P01 deadlock, 53xxx recursos (conexões
 // esgotadas), 57P0x servidor reiniciando/desligando.
-const TRANSIENT_SQLSTATE_PREFIXES = ["08", "40001", "40P01", "53", "57P0"];
+// 55P03 lock_not_available: o lock_timeout da transação estourou numa carteira disputada.
+const TRANSIENT_SQLSTATE_PREFIXES = ["08", "40001", "40P01", "53", "55P03", "57P0"];
 
 // DECISION: transitório = repetir a mesma requisição pode dar certo sem o cliente mudar nada.
 // Violações de constraint, erros de sintaxe e de domínio são permanentes e não entram aqui.

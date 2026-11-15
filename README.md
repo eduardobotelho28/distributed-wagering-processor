@@ -58,6 +58,8 @@ curl -s -i -X POST localhost:3000/wagering/transactions \
 
 Repetir **exatamente** a mesma requisição devolve `200` com `idempotentReplay: true` e o mesmo
 saldo, sem novo débito. A mesma key com outro payload devolve `409 IDEMPOTENCY_CONFLICT`.
+O mesmo `externalTransactionId` do provedor sob outra key devolve
+`409 EXTERNAL_TRANSACTION_ID_CONFLICT`.
 
 Reversão de uma aposta (`REFUND` ou `ROLLBACK`) aponta para o `externalTransactionId` da referência:
 
@@ -106,7 +108,7 @@ tem `retryable: true` (e `Retry-After`).
 | aceito com referência pendente | 202 |
 | payload inválido, header ausente, id malformado | 400 |
 | recurso inexistente | 404 |
-| conflito de idempotência, carteira duplicada | 409 |
+| conflito de idempotência, id externo sob outra key, carteira duplicada | 409 |
 | rejeição de regra de negócio (também no replay) | 422 |
 | falha interna permanente (`FAILED`) | 500 |
 | falha transitória de infraestrutura | 503 |
@@ -156,6 +158,7 @@ interrompe o processo listando todas as falhas.
 | `OUTBOX_BATCH_SIZE` | `50` | Eventos por rodada do publisher |
 | `PENDING_REFERENCE_BATCH_SIZE` | `50` | Pendências por rodada do worker |
 | `SQS_MAX_MESSAGES` | `10` | Mensagens por receive (máx. 10) |
+| `DATABASE_LOCK_TIMEOUT_MS` | `10000` | `lock_timeout` de cada transação; estourado vira 503 retryable (HTTP) ou retry (SQS) |
 
 `POSTGRES_*`, `POSTGRES_PORT` e `LOCALSTACK_PORT` configuram só os containers de infraestrutura.
 
@@ -168,7 +171,7 @@ O outbox publica em `wager-events` com entrega **at-least-once**; consumidores d
 {
   "eventId": "uuid-v7",
   "eventType": "WalletBalanceChanged",
-  "eventVersion": 1,
+  "version": 1,
   "aggregateId": "<walletId>",
   "correlationId": "demo-1",
   "causationId": null,
@@ -176,8 +179,11 @@ O outbox publica em `wager-events` com entrega **at-least-once**; consumidores d
   "data": {
     "walletId": "uuid",
     "transactionId": "uuid",
+    "direction": "DEBIT",
+    "money": { "amount": "25.00", "currency": "BRL" },
     "balanceBefore": { "amount": "100.00", "currency": "BRL" },
-    "balanceAfter": { "amount": "75.00", "currency": "BRL" }
+    "balanceAfter": { "amount": "75.00", "currency": "BRL" },
+    "walletVersion": 2
   }
 }
 ```

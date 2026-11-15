@@ -2,7 +2,13 @@
 // nova no Prometheus. Os valores de label também são fechados para limitar a cardinalidade.
 export interface CounterLabels {
   wager_transactions_total: {
-    status: "processed" | "rejected" | "pendingReference" | "failed" | "idempotencyConflict";
+    status:
+      | "processed"
+      | "rejected"
+      | "pendingReference"
+      | "failed"
+      | "idempotencyConflict"
+      | "externalIdConflict";
     channel: Channel;
   };
   duplicates_detected_total: { source: "inbox" | "idempotency_key" };
@@ -15,6 +21,7 @@ export interface CounterLabels {
 export interface HistogramLabels {
   wager_processing_duration_seconds: { channel: Channel };
   outbox_publish_lag_seconds: Record<string, never>;
+  wallet_lock_wait_seconds: Record<string, never>;
 }
 
 export type Channel = "http" | "sqs" | "reprocess";

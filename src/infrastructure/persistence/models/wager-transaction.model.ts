@@ -26,6 +26,7 @@ export const WagerTransactionSchema = defineEntity({
     failureCode: p.enum(() => FailureCode).nullable(),
     pendingAttempts: p.integer(),
     nextAttemptAt: p.datetime().nullable(),
+    correlationId: p.string().nullable(),
     processedAt: p.datetime().nullable(),
     createdAt: p.datetime(),
   },

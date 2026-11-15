@@ -7,6 +7,7 @@ import { WalletBalanceChanged } from "../../domain/events/wallet-balance-changed
 import type { Money } from "../../domain/money/money";
 import { type OutboxEvent, OutboxMessage } from "../../domain/outbox/outbox-message";
 import type { WagerTransaction } from "../../domain/transaction/wager-transaction";
+import type { Wallet } from "../../domain/wallet/wallet";
 import type { WalletLedgerEntry } from "../../domain/wallet/wallet-ledger-entry";
 import type { EventContext } from "../ports/event-context";
 import type { IdGenerator } from "../ports/id-generator";
@@ -39,16 +40,8 @@ export class SubmissionEvents {
   }
 
   // INVARIANT: só é chamado quando há lançamento; LOSS e rejeições nunca mudam o saldo.
-  balanceChanged(entry: WalletLedgerEntry): Promise<void> {
-    return this.enqueue(
-      WalletBalanceChanged.create({
-        ...this.origin(),
-        walletId: entry.walletId,
-        transactionId: entry.transactionId,
-        balanceBefore: entry.balanceBefore,
-        balanceAfter: entry.balanceAfter,
-      }),
-    );
+  balanceChanged(wallet: Wallet, entry: WalletLedgerEntry): Promise<void> {
+    return this.enqueue(WalletBalanceChanged.from(wallet, entry, this.origin()));
   }
 
   rejected(transaction: WagerTransaction, failureCode: FailureCode): Promise<void> {

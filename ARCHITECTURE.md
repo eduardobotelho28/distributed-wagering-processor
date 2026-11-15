@@ -110,6 +110,13 @@ processam".
 | Lock global / fila única por processo | Mata o paralelismo entre carteiras diferentes e não funciona com várias instâncias. |
 | Advisory lock do Postgres | Funciona, mas é um segundo mecanismo de coordenação fora da linha que já precisa ser travada. |
 
+**Espera limitada:** cada transação roda com `SET LOCAL lock_timeout` (padrão 10s,
+`DATABASE_LOCK_TIMEOUT_MS`). Sem limite, uma carteira presa (transação travada, conexão
+pendurada) seguraria todas as requisições dela até esgotar o pool. Estourado, o Postgres
+devolve `55P03`, que é transitório: 503 + `Retry-After` no HTTP, retry com backoff no SQS, e
+conta em `lock_conflicts_total{kind="lock_timeout"}`. O valor é bem maior que a fila normal de
+uma carteira quente (50 apostas simultâneas em 3 instâncias passam com folga).
+
 O `version` da carteira existe e é incrementado a cada movimentação, mas como contador, não
 como mecanismo de concorrência. A reconciliação também lê com a carteira travada: em READ
 COMMITTED, duas leituras sem lock poderiam ver commits diferentes e acusar divergência falsa.
@@ -131,6 +138,10 @@ COMMITTED, duas leituras sem lock poderiam ver commits diferentes e acusar diver
   (`resulting_balance` gravado na linha), com `idempotentReplay: true`. Replay de REJECTED
   responde 422 de novo. Replay não emite eventos.
 - **Mesma key + outro hash** → `409 IDEMPOTENCY_CONFLICT`; nada é gravado.
+- **Mesmo `(providerId, externalTransactionId)` sob outra key** → `409
+  EXTERNAL_TRANSACTION_ID_CONFLICT` (no SQS, DLQ com esse código); nada é gravado. A key decide
+  o replay; duas keys para a mesma operação do provedor são erro do cliente. Sob corrida, o
+  `UNIQUE (provider_id, external_transaction_id)` decide e a perdedora relê numa transação nova.
 - **Corrida entre carteiras:** a mesma key enviada ao mesmo tempo para duas carteiras não
   serializa no lock (são linhas distintas). O `UNIQUE` decide: a perdedora tem a transação
   abortada, e relemos a key numa transação nova. O Postgres só acusa a violação depois que a
@@ -187,7 +198,7 @@ Mesmo mapeamento em todos os endpoints; corpo de erro `{ code, message, retryabl
 | referência pendente | 202 | — |
 | payload inválido, header ausente, id malformado | 400 | false |
 | não encontrado | 404 | false |
-| conflito de idempotência, carteira duplicada | 409 | false |
+| conflito de idempotência, id externo sob outra key, carteira duplicada | 409 | false |
 | rejeição de negócio (também no replay) | 422 | false |
 | `FAILED` (erro interno permanente) | 500 | false |
 | falha transitória (conexão, deadlock, lock timeout, serialização, pool esgotado) | 503 + `Retry-After: 1` | **true** |
@@ -202,10 +213,11 @@ do campo, nunca o valor recebido.
 |---|---|---|
 | processed, rejected, pendingReference | negócio | ack (depois do commit) |
 | duplicata no inbox | negócio | ack, sem efeito |
+| mesmo `messageId` com outro payload (hash do inbox diverge) | permanente | DLQ `MESSAGE_ID_CONFLICT` + ack, sem efeito |
 | exceção (banco fora, deadlock, lock timeout, erro inesperado) | transitória | sem ack; visibilidade com backoff |
 | exceção no limite de recebimentos | esgotada | grava `FAILED` (se possível) + DLQ com motivo + ack |
 | malformada, payload inválido, OPENING | permanente | DLQ com motivo + ack |
-| conflito de idempotência, `FAILED` já gravado | permanente | DLQ com motivo + ack |
+| conflito de idempotência ou de id externo, `FAILED` já gravado | permanente | DLQ com motivo + ack |
 
 Exceção inesperada é tratada como transitória: repetir até o limite custa poucas tentativas, e
 tratá-la como permanente mandaria para a DLQ algo que um restart do banco resolveria. A
@@ -267,8 +279,10 @@ Tudo que é tempo é injetado por `Clock`, então os testes avançam o relógio 
   valores monetários não vão para o log; a única exceção deliberada é a diferença da
   reconciliação, que o enunciado pede para logar.
 - Métricas Prometheus em `GET /metrics`: transações por status e canal, duplicatas (inbox e
-  key), retries por tipo, DLQ por código, conflitos de lock, lag do outbox, latência de
-  processamento e divergências de reconciliação. Nomes e labels são uniões fechadas no código.
+  key), retries por tipo, DLQ por código, conflitos de lock (deadlock, serialização e
+  `lock_timeout`), **tempo de espera pelo lock da carteira** (`wallet_lock_wait_seconds`, o sinal
+  de carteira disputada mesmo quando nada falha), lag do outbox, latência de processamento e
+  divergências de reconciliação. Nomes e labels são uniões fechadas no código.
 - `/health/live` não toca dependências; `/health/ready` faz `select 1` e `GetQueueUrl` reais.
 
 ### 2.15 Decisões menores
@@ -310,7 +324,8 @@ Cada invariante tem pelo menos uma barreira no código **e**, quando cabe, uma n
 | Valor de lançamento > 0 | `WalletLedgerEntry.create`; validação na borda | `wallet_ledger_entries_amount_positive` | `constraints.test.ts`, `boundary-and-failures.test.ts` |
 | Dinheiro nunca é float | `Money.from` só aceita string; lint proíbe float em `src/` | `NUMERIC(19,2)` | `test/unit/domain/money/*.test.ts`, `test/lint/money-float-ban.test.ts`, `test/integration/persistence/money-columns.test.ts` |
 | Uma transação por idempotency key | lock antes da busca; releitura na corrida | `wager_transactions_idempotency_key_unique` | `test/concurrency/same-bet-50x.test.ts`, `test/integration/application/idempotency-key-race.test.ts` |
-| Um par provedor + id externo | — | `wager_transactions_provider_external_unique` | `constraints.test.ts` |
+| Um par provedor + id externo | busca antes do insert; violação vira `409 EXTERNAL_TRANSACTION_ID_CONFLICT` | `wager_transactions_provider_external_unique` | `constraints.test.ts`, `external-id-conflict.test.ts`, `idempotency-key-race.test.ts` |
+| Transação só move a carteira do próprio jogador | processador rejeita com `PLAYER_MISMATCH` antes de qualquer movimento | — | `player-ownership.test.ts`, `submit-transaction.e2e.test.ts` |
 | Uma movimentação por transação | id do lançamento = id da transação | `wallet_ledger_entries_wallet_transaction_unique` | `constraints.test.ts` |
 | Reversão única por referência | `findProcessedReversalOf` → `REFERENCE_ALREADY_REVERSED` | índice único parcial em `reference_transaction_id` | `test/concurrency/concurrent-reversals.test.ts`, `test/concurrency/reversal-before-reference.test.ts`, `single-reversal-per-reference.migration.test.ts` |
 | REFUND/ROLLBACK exigem referência | `WagerTransaction.create`; validação na borda | `wager_transactions_reversal_reference_check` | `boundary-and-failures.test.ts`, `constraints.test.ts` |
@@ -340,6 +355,7 @@ mandar uma **transação nova**, com outro `externalTransactionId` e outra key, 
 | `REFERENCE_NOT_FOUND` | referência não chegou dentro de 8 tentativas / 1h | Enviar a referência e depois uma nova reversão. |
 | `REFERENCE_ALREADY_REVERSED` | a referência já foi revertida uma vez | Desistir; nunca terá sucesso. |
 | `REFERENCE_MISMATCH` | provedor, jogador, carteira ou rodada diferem da referência | Corrigir o payload. |
+| `PLAYER_MISMATCH` | `playerId` do payload não é o dono da carteira | Corrigir o payload. |
 | `INVALID_REFERENCE_KIND` | tipo da referência não pode ser revertido por este tipo | Corrigir o payload. |
 | `REFERENCE_NOT_PROCESSED` | a referência existe mas foi rejeitada | Desistir; referência rejeitada não se reverte. |
 | `AMOUNT_MISMATCH` | valor da reversão difere da referência | Corrigir o payload. |
@@ -441,11 +457,12 @@ carteira com milhões de lançamentos isso bloquearia as apostas durante a soma.
 saldo de checkpoint por período (soma até o último checkpoint + lançamentos depois dele), ou
 reconciliar a partir de uma réplica num ponto consistente.
 
-### 5.5 Correlação perdida no reprocessamento
+### 5.5 Correlação no reprocessamento (resolvida)
 
-O `correlationId` da requisição original não é gravado no banco. Eventos emitidos pelo worker de
-`PENDING_REFERENCE` (minutos depois) correlacionam pelo id da transação, não pelo id da
-requisição que a criou. Correção: uma coluna `correlation_id` em `wager_transactions`.
+O `correlationId` da requisição ou mensagem que criou a transação fica em
+`wager_transactions.correlation_id`. Eventos emitidos pelo worker de `PENDING_REFERENCE`
+(minutos depois, em outro processo) herdam esse valor e usam a transação pendente como
+`causationId`. Linhas gravadas antes da coluna correlacionam pelo id da transação.
 
 ### 5.6 Consumidor processa uma mensagem por vez por instância
 
@@ -469,8 +486,6 @@ dedicadas.
 | Item | Motivo |
 |---|---|
 | Autenticação real (OIDC) | Permitido pelo enunciado; ponto de extensão pronto (seção 4). |
-| Mesmo `messageId` com payload diferente | Tratado como duplicata (ack sem efeito); o hash fica gravado no inbox, mas não é comparado. Poderia ir para a DLQ como conflito. |
-| `playerId` x dono da carteira | O payload não é conferido contra o jogador dono da carteira; não existe `FailureCode` para isso no contrato. |
 | `occurredAt` do provedor | Validado na mensagem, mas não gravado; o sistema usa o relógio do servidor. |
 | Gauge de idade do outbox | O lag é medido no momento da publicação; um evento parado só aparece quando sai. Um gauge do pendente mais antigo exigiria uma consulta a mais por rodada. |
 | `/metrics` autenticado | Aberto como o health; em produção ficaria atrás do ingress interno. |

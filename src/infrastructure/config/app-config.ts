@@ -18,6 +18,7 @@ export interface AppConfig {
     readonly outboxBatchSize: number;
     readonly pendingReferenceBatchSize: number;
     readonly sqsMaxMessages: number;
+    readonly lockTimeoutMs: number;
   };
 }
 
@@ -26,6 +27,7 @@ export type Environment = Readonly<Record<string, string | undefined>>;
 const MAX_TCP_PORT = 65535;
 const SQS_MAX_MESSAGES_PER_RECEIVE = 10;
 const POSITIVE_INTEGER = /^[1-9]\d*$/;
+export const DEFAULT_LOCK_TIMEOUT_MS = 10_000;
 
 export class ConfigValidationError extends Error {
   constructor(readonly problems: readonly string[]) {
@@ -112,6 +114,7 @@ export function loadConfig(env: Environment): AppConfig {
       outboxBatchSize: read.positiveInteger("OUTBOX_BATCH_SIZE", 50),
       pendingReferenceBatchSize: read.positiveInteger("PENDING_REFERENCE_BATCH_SIZE", 50),
       sqsMaxMessages: read.positiveInteger("SQS_MAX_MESSAGES", 10, SQS_MAX_MESSAGES_PER_RECEIVE),
+      lockTimeoutMs: read.positiveInteger("DATABASE_LOCK_TIMEOUT_MS", DEFAULT_LOCK_TIMEOUT_MS),
     },
   };
   read.assertValid();
