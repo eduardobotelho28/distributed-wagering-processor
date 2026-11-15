@@ -7,7 +7,7 @@ import { WagerTransactionSchema } from "../../src/infrastructure/persistence/mod
 import { WalletSchema } from "../../src/infrastructure/persistence/models/wallet.model";
 import { waitFor } from "../support/app-process";
 import { type Cluster, startCluster } from "../support/cluster";
-import { bet, createWallet } from "../support/cluster-scenario";
+import { bet, createWallet, ownerOf } from "../support/cluster-scenario";
 import { assertLedgerInvariant } from "../support/ledger-invariant";
 import { createTestQueues, type SqsTestQueues } from "../support/sqs-fixture";
 import { createTestDatabase, type TestDatabase } from "../support/test-database";
@@ -48,7 +48,7 @@ function sqsBet(walletId: string): Promise<void> {
         providerId: "provider-a",
         externalTransactionId,
         idempotencyKey: `provider-a:${externalTransactionId}`,
-        playerId: "player-cluster",
+        playerId: ownerOf(walletId),
         walletId,
         roundId: "round-1",
         gameId: "game-1",

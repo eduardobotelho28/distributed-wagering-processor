@@ -16,6 +16,7 @@ describe("FailureCode", () => {
         "INSUFFICIENT_FUNDS",
         "INTERNAL_PERMANENT_ERROR",
         "INVALID_REFERENCE_KIND",
+        "PLAYER_MISMATCH",
         "REFERENCE_ALREADY_REVERSED",
         "REFERENCE_MISMATCH",
         "REFERENCE_NOT_FOUND",

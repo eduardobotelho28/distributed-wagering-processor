@@ -314,7 +314,8 @@ Cada invariante tem pelo menos uma barreira no código **e**, quando cabe, uma n
 | Valor de lançamento > 0 | `WalletLedgerEntry.create`; validação na borda | `wallet_ledger_entries_amount_positive` | `constraints.test.ts`, `boundary-and-failures.test.ts` |
 | Dinheiro nunca é float | `Money.from` só aceita string; lint proíbe float em `src/` | `NUMERIC(19,2)` | `test/unit/domain/money/*.test.ts`, `test/lint/money-float-ban.test.ts`, `test/integration/persistence/money-columns.test.ts` |
 | Uma transação por idempotency key | lock antes da busca; releitura na corrida | `wager_transactions_idempotency_key_unique` | `test/concurrency/same-bet-50x.test.ts`, `test/integration/application/idempotency-key-race.test.ts` |
-| Um par provedor + id externo | — | `wager_transactions_provider_external_unique` | `constraints.test.ts` |
+| Um par provedor + id externo | busca antes do insert; violação vira `409 EXTERNAL_TRANSACTION_ID_CONFLICT` | `wager_transactions_provider_external_unique` | `constraints.test.ts`, `external-id-conflict.test.ts`, `idempotency-key-race.test.ts` |
+| Transação só move a carteira do próprio jogador | processador rejeita com `PLAYER_MISMATCH` antes de qualquer movimento | — | `player-ownership.test.ts`, `submit-transaction.e2e.test.ts` |
 | Uma movimentação por transação | id do lançamento = id da transação | `wallet_ledger_entries_wallet_transaction_unique` | `constraints.test.ts` |
 | Reversão única por referência | `findProcessedReversalOf` → `REFERENCE_ALREADY_REVERSED` | índice único parcial em `reference_transaction_id` | `test/concurrency/concurrent-reversals.test.ts`, `test/concurrency/reversal-before-reference.test.ts`, `single-reversal-per-reference.migration.test.ts` |
 | REFUND/ROLLBACK exigem referência | `WagerTransaction.create`; validação na borda | `wager_transactions_reversal_reference_check` | `boundary-and-failures.test.ts`, `constraints.test.ts` |
@@ -344,6 +345,7 @@ mandar uma **transação nova**, com outro `externalTransactionId` e outra key, 
 | `REFERENCE_NOT_FOUND` | referência não chegou dentro de 8 tentativas / 1h | Enviar a referência e depois uma nova reversão. |
 | `REFERENCE_ALREADY_REVERSED` | a referência já foi revertida uma vez | Desistir; nunca terá sucesso. |
 | `REFERENCE_MISMATCH` | provedor, jogador, carteira ou rodada diferem da referência | Corrigir o payload. |
+| `PLAYER_MISMATCH` | `playerId` do payload não é o dono da carteira | Corrigir o payload. |
 | `INVALID_REFERENCE_KIND` | tipo da referência não pode ser revertido por este tipo | Corrigir o payload. |
 | `REFERENCE_NOT_PROCESSED` | a referência existe mas foi rejeitada | Desistir; referência rejeitada não se reverte. |
 | `AMOUNT_MISMATCH` | valor da reversão difere da referência | Corrigir o payload. |
@@ -474,7 +476,6 @@ dedicadas.
 |---|---|
 | Autenticação real (OIDC) | Permitido pelo enunciado; ponto de extensão pronto (seção 4). |
 | Mesmo `messageId` com payload diferente | Tratado como duplicata (ack sem efeito); o hash fica gravado no inbox, mas não é comparado. Poderia ir para a DLQ como conflito. |
-| `playerId` x dono da carteira | O payload não é conferido contra o jogador dono da carteira; não existe `FailureCode` para isso no contrato. |
 | `occurredAt` do provedor | Validado na mensagem, mas não gravado; o sistema usa o relógio do servidor. |
 | Gauge de idade do outbox | O lag é medido no momento da publicação; um evento parado só aparece quando sai. Um gauge do pendente mais antigo exigiria uma consulta a mais por rodada. |
 | `/metrics` autenticado | Aberto como o health; em produção ficaria atrás do ingress interno. |

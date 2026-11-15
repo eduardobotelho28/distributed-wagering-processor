@@ -82,6 +82,28 @@ describe("POST /wagering/transactions", () => {
     expect(reply.body).toMatchObject({ code: "IDEMPOTENCY_CONFLICT", retryable: false });
   });
 
+  test("422 PLAYER_MISMATCH when the playerId is not the wallet owner", async () => {
+    const walletId = await createWalletOver(app, "100.00");
+    const reply = await app.request("POST", "/wagering/transactions", {
+      headers: { "idempotency-key": `provider-a:${crypto.randomUUID()}` },
+      body: {
+        providerId: "provider-a",
+        externalTransactionId: crypto.randomUUID(),
+        playerId: "player-who-does-not-own-it",
+        walletId,
+        roundId: "round-1",
+        gameId: "fortune-test",
+        kind: "BET",
+        money: { amount: "10.00", currency: "BRL" },
+      },
+    });
+
+    expect(reply.status).toBe(422);
+    expect(reply.body).toMatchObject({ status: "REJECTED", code: "PLAYER_MISMATCH" });
+    expect(reply.body).toMatchObject({ balance: { amount: "100.00", currency: "BRL" } });
+    await assertLedgerInvariant(app.db.orm.em.fork(), walletId);
+  });
+
   test("409 EXTERNAL_TRANSACTION_ID_CONFLICT when the same externalTransactionId comes under another key", async () => {
     const walletId = await createWalletOver(app, "100.00");
     const externalTransactionId = crypto.randomUUID();

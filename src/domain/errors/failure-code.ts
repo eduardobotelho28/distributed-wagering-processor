@@ -19,6 +19,8 @@ export enum FailureCode {
   REFERENCE_NOT_PROCESSED = "REFERENCE_NOT_PROCESSED",
   /** Valor do estorno difere do valor da referência. Provedor: corrigir o payload. */
   AMOUNT_MISMATCH = "AMOUNT_MISMATCH",
+  /** playerId do payload não é o dono da carteira. Provedor: corrigir o payload. */
+  PLAYER_MISMATCH = "PLAYER_MISMATCH",
   /** Moeda difere da carteira ou da referência. Provedor: corrigir o payload. */
   CURRENCY_MISMATCH = "CURRENCY_MISMATCH",
   /** Carteira não existe. Provedor: corrigir o payload; não reenviar igual. */
