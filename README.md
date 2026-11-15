@@ -17,6 +17,55 @@ rodar em paralelo com segurança.
 As decisões de arquitetura, as invariantes e as limitações estão em [ARCHITECTURE.md](ARCHITECTURE.md),
 e o teste de carga está em [LOAD_TEST.md](LOAD_TEST.md).
 
+## Observações sobre o fluxo de desenvolvimento
+
+Gostaria de descrever brevemente como foi o meu fluxo de desenvolvimento.
+
+### Planejamento em tasks
+
+Primeiro, analisei o README do desafio e dividi todo o desenvolvimento em tasks: foram **102 tasks
+iniciais**, além de algumas de refactor. Separei o que deveria ser feito por mim (**HUMAN / CORE**),
+que envolvia:
+
+- decisões de arquitetura;
+- idempotência;
+- race conditions e locks;
+- ledger;
+- instalação de pacotes;
+- documentação.
+
+O restante deleguei ao **Claude**, que usei como braço direito (o README do desafio não dizia nada
+sobre usar IA, então decidi usar), sempre revisando o código antes de cada PR. As tasks foram
+agrupadas em branches coerentes: ao todo, cerca de **50 branches pequenas**, que foram revisadas,
+mergeadas na `main` e depois excluídas.
+
+### Pipeline de qualidade
+
+Também configurei uma pipeline básica de desenvolvimento, com ESLint, Prettier etc., que foi
+essencial para garantir a qualidade do código. Aproveitei para adicionar essa pipeline ao
+**GitHub Actions**, com os testes rodando a cada PR. Isso provou, ao longo do desenvolvimento, que
+os testes passavam tanto localmente quanto em outros ambientes (no caso, o GitHub), e me deu
+confiança para seguir em frente após aprovar cada PR.
+
+### Testes
+
+O projeto conta com muitos testes: unitários, de integração, de concorrência e de carga, além do
+lint. Eles estão bem organizados em pastas e arquivos, para facilitar a análise de algum teste
+específico, caso seja necessário.
+
+### Documentação
+
+Escrevi o [ARCHITECTURE.md](ARCHITECTURE.md) com tudo o que considerei relevante sobre as
+decisões, invariantes e limitações do projeto. Usei o Claude apenas para formatar o conteúdo
+em Markdown e melhor organização.
+
+### Uma nota pessoal
+
+Também gostaria de destacar que eu não tinha muito domínio prévio de NestJS nem de MikroORM. Por
+isso, talvez o código e a organização de pastas não estejam da melhor forma possível, mas entendi
+que esse não era o foco da avaliação.
+
+
 ## Como rodar
 
 O único pré-requisito é **Docker** com Compose v2. Não é preciso instalar Bun, Node nem Postgres.

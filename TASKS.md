@@ -12,7 +12,7 @@ Source of truth for the work. Read `AGENTS.md` first.
 6. Report in 5 lines max: what changed, which decisions you made, anything doubtful. Then STOP. Reports in PT-BR. Comments in code in PT-BR.
 7. If a task is ambiguous or conflicts with `AGENTS.md`, stop and ask.
 
-Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan mode and review the diff carefully.
+Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan mode and review the diff carefully and Eduardo reviews, makes architectural decisions, and approves.
 
 ## Fixed decisions (do not re-discuss, document them in ARCHITECTURE.md)
 
@@ -452,11 +452,11 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   Table: invariant -> where enforced (code, DB constraint) -> test that proves it. Table of `FailureCode` with retry guidance. Transition table of `WagerTransaction`.
   Done when: no invariant without a test.
 
-- [x] **T98 ARCHITECTURE.md: limitations and trade-offs** (099a332)
+- [x][Human] **T98 ARCHITECTURE.md: limitations and trade-offs** (099a332)
   Honest section: what is not handled, what would change at scale (partitioning, hot-wallet throughput), what was cut and why.
   Done when: at least 5 concrete limitations.
 
-- [x] **T99 Comment pass** (d050817)
+- [x][Human] **T99 Comment pass** (d050817)
   Review `DECISION` / `INVARIANT` / `RISK` comments in the vital files (Money, Wallet, Submit use case, repositories with locks, migrations, consumer, publisher). Remove comments that restate code.
   Done when: each vital file explains its reasoning.
 
@@ -483,6 +483,6 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
 - [x] **T108 Correlation on reprocess** (30b93f0)
   `wager_transactions.correlation_id` (migration with `down`); reprocessed events keep the original correlation.
 
-- [ ] **T102 [HUMAN] Final review and submission**
+- [x] **T102 [HUMAN] Final review and submission**
   Read the whole diff, run everything from a clean clone, prepare the presentation talking points from the `DECISION` comments.
   Done when: submitted.

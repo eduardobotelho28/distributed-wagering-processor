@@ -21,7 +21,7 @@ Sumário:
             HTTP POST /wagering/transactions            SQS wager-transactions.fifo
                          │                                (grupo FIFO = walletId)
                          ▼                                          │
-              validação na borda (400)                    parse + inbox (dedupe)
+              validação na borda (400)                    parse + inbox (deduplication)
                          │                                          │
                          └──────────────┬───────────────────────────┘
                                         ▼
@@ -108,7 +108,6 @@ processam".
 | Lock otimista com `version` e retry | Uma carteira concorrida (o cenário de apostas) queima retries; com 50 requisições simultâneas a maioria falharia e repetiria. O lock serializa sem desperdício e é simples de raciocinar. |
 | `UPDATE … SET balance = balance - x WHERE balance >= x` | Resolve o saldo, mas não o resto da decisão (idempotência, regra de reversão, ledger com `balance_before`), que precisa de um estado lido e estável. |
 | Lock global / fila única por processo | Mata o paralelismo entre carteiras diferentes e não funciona com várias instâncias. |
-| Advisory lock do Postgres | Funciona, mas é um segundo mecanismo de coordenação fora da linha que já precisa ser travada. |
 
 **Espera limitada:** cada transação roda com `SET LOCAL lock_timeout` (padrão 10s,
 `DATABASE_LOCK_TIMEOUT_MS`). Sem limite, uma carteira presa (transação travada, conexão
