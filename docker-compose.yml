@@ -34,7 +34,7 @@ services:
   app:
     build: .
     env_file: .env
-    # Sincroniza o volume de node_modules com o bun.lock (o volume anônimo sobrevive a rebuilds) e aplica as migrations antes de subir: um clone novo funciona só com `docker compose up`.
+    # Sincroniza o volume de node_modules com o bun.lock.
     command: ["sh", "-c", "bun install --frozen-lockfile && bun run migration:up && bun run start:dev"]
     ports:
       - "${APP_PORT:-3000}:${APP_PORT:-3000}"
