@@ -3,6 +3,8 @@ import { startAppProcess, waitFor } from "./app-process";
 export interface ClusterInstance {
   baseUrl: string;
   stop(): Promise<void>;
+  // SIGKILL: sem shutdown gracioso, como uma queda de máquina.
+  kill(): Promise<void>;
 }
 
 export interface Cluster {
@@ -10,6 +12,7 @@ export interface Cluster {
   // Distribui as chamadas em rodízio entre as instâncias.
   next(): ClusterInstance;
   stop(): Promise<void>;
+  kill(): Promise<void>;
 }
 
 export interface HttpResult {
@@ -41,6 +44,10 @@ async function startInstance(env: Record<string, string>): Promise<ClusterInstan
       child.kill("SIGTERM");
       await child.exited;
     },
+    async kill() {
+      child.kill("SIGKILL");
+      await child.exited;
+    },
   };
 }
 
@@ -60,6 +67,9 @@ export async function startCluster(size: number, env: Record<string, string>): P
     },
     async stop() {
       await Promise.all(instances.map((instance) => instance.stop()));
+    },
+    async kill() {
+      await Promise.all(instances.map((instance) => instance.kill()));
     },
   };
 }

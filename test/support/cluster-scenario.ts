@@ -17,7 +17,12 @@ export interface BetRequest {
   amount: string;
 }
 
-export function bet(instance: ClusterInstance, request: BetRequest): Promise<HttpResult> {
+export interface WagerRequest extends BetRequest {
+  kind: string;
+  referenceExternalTransactionId?: string;
+}
+
+export function wager(instance: ClusterInstance, request: WagerRequest): Promise<HttpResult> {
   return postJson(
     instance,
     "/wagering/transactions",
@@ -28,11 +33,16 @@ export function bet(instance: ClusterInstance, request: BetRequest): Promise<Htt
       walletId: request.walletId,
       roundId: "round-1",
       gameId: "game-1",
-      kind: "BET",
+      kind: request.kind,
       money: { amount: request.amount, currency: "BRL" },
+      referenceExternalTransactionId: request.referenceExternalTransactionId,
     },
     { "idempotency-key": `provider-a:${request.externalTransactionId}` },
   );
+}
+
+export function bet(instance: ClusterInstance, request: BetRequest): Promise<HttpResult> {
+  return wager(instance, { ...request, kind: "BET" });
 }
 
 export async function balanceOf(instance: ClusterInstance, walletId: string): Promise<unknown> {

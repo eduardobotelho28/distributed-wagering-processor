@@ -413,26 +413,26 @@ Legend: `[HUMAN]` = Eduardo does it by hand. `[CORE]` = high-risk task, use plan
   Mixed HTTP and SQS load on the same hot wallet.
   Done when: invariant holds, no negative balance.
 
-- [ ] **T89 Worker killed after commit, before ack**
+- [x] **T89 Worker killed after commit, before ack** (ca4d947)
   `kill -9` after commit; message redelivered; no duplicate effect.
   Done when: green.
 
-- [ ] **T90 Two publishers, same outbox**
+- [x] **T90 Two publishers, same outbox** (3b9b4dd)
   Done when: no event lost; duplicates (if any) are safe by `eventId`.
 
-- [ ] **T91 Reversal before reference**
+- [x] **T91 Reversal before reference** (5bedbda)
   ROLLBACK and REFUND delivered before their BET, in parallel with the BET.
   Done when: final state correct and single-reversal rule holds under race.
 
-- [ ] **T92 Concurrent reversals of the same reference**
+- [x] **T92 Concurrent reversals of the same reference** (38fdf43)
   Two ROLLBACKs (and REFUND + ROLLBACK) of the same BET in parallel -> exactly one PROCESSED.
   Done when: green.
 
-- [ ] **T93 Restart consistency**
+- [x] **T93 Restart consistency** (cf8da59)
   Stop all instances mid-load, restart, wait for drain, run `assertLedgerInvariant` on every wallet.
   Done when: `wallet.balance == ledger-derived balance` for all wallets.
 
-- [ ] **T94 Postgres/SQS outage tests**
+- [x] **T94 Postgres/SQS outage tests** (d71e5d4)
   Pause Postgres container during processing; transient errors retried, nothing lost. Same for LocalStack during publishing.
   Done when: green.
 
