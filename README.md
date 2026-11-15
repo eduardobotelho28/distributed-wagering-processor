@@ -113,3 +113,125 @@ docker compose run --rm app bun test
 
 Cada suíte cria o próprio banco e as próprias filas temporárias, então os testes não interferem
 nos dados da aplicação em execução.
+
+## Exemplos de requisição (Postman / Insomnia)
+
+Os comandos abaixo são `curl` e podem ser colados direto no Postman (*Import → Raw text*) ou no
+Insomnia (*Paste cURL*). Todos usam `http://localhost:3000`. A autenticação está em modo
+*trust-all*, então não é preciso header `Authorization`.
+
+> **Importante:** `WALLET_ID` é um placeholder. Depois de rodar o passo 1, substitua-o em todos os
+> exemplos pelo `id` (UUID) que voltou na resposta. Enviado literalmente, a API responde
+> `400 INVALID_FIELD` ("walletId must be a UUID").
+>
+> No Postman dá para automatizar: na aba *Scripts → Post-response* do passo 1 coloque
+> `pm.collectionVariables.set("walletId", pm.response.json().id);` e use `{{walletId}}` nos demais.
+
+### 1. Criar carteira
+
+```sh
+curl -X POST http://localhost:3000/wallets \
+  -H "Content-Type: application/json" \
+  -d '{ "playerId": "player-1", "initialBalance": { "amount": "100.00", "currency": "BRL" } }'
+```
+
+`201 Created`:
+
+```json
+{ "id": "WALLET_ID", "playerId": "player-1",
+  "balance": { "amount": "100.00", "currency": "BRL" }, "version": 1 }
+```
+
+Repetir com o mesmo `playerId` e moeda dá `409 WALLET_ALREADY_EXISTS`. Para recomeçar, use outro
+`playerId` (e o mesmo valor nas transações, senão volta `422 PLAYER_MISMATCH`).
+
+### 2. Aposta (BET) e replay idempotente
+
+```sh
+curl -X POST http://localhost:3000/wagering/transactions \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: bet-001" \
+  -d '{
+    "providerId": "prov-A", "externalTransactionId": "ext-bet-001",
+    "playerId": "player-1", "walletId": "WALLET_ID",
+    "roundId": "round-1", "gameId": "slots-1",
+    "kind": "BET", "money": { "amount": "30.00", "currency": "BRL" }
+  }'
+```
+
+`201 Created`:
+
+```json
+{ "transactionId": "…", "status": "PROCESSED",
+  "balance": { "amount": "70.00", "currency": "BRL" }, "idempotentReplay": false }
+```
+
+- Mesma requisição de novo: `200 OK`, mesmo corpo com `"idempotentReplay": true`, saldo segue `70.00`.
+- Mesma `Idempotency-Key` com outro valor: `409 IDEMPOTENCY_CONFLICT`.
+
+### 3. Saldo insuficiente (rejeição de negócio)
+
+```sh
+curl -X POST http://localhost:3000/wagering/transactions \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: bet-002" \
+  -d '{
+    "providerId": "prov-A", "externalTransactionId": "ext-bet-002",
+    "playerId": "player-1", "walletId": "WALLET_ID",
+    "roundId": "round-2", "gameId": "slots-1",
+    "kind": "BET", "money": { "amount": "500.00", "currency": "BRL" }
+  }'
+```
+
+`422 Unprocessable Entity`:
+
+```json
+{ "transactionId": "…", "status": "REJECTED",
+  "balance": { "amount": "70.00", "currency": "BRL" }, "idempotentReplay": false,
+  "code": "INSUFFICIENT_FUNDS", "message": "transaction rejected by business rule", "retryable": false }
+```
+
+### 4. Estorno da aposta (ROLLBACK)
+
+```sh
+curl -X POST http://localhost:3000/wagering/transactions \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: rb-001" \
+  -d '{
+    "providerId": "prov-A", "externalTransactionId": "ext-rb-001",
+    "playerId": "player-1", "walletId": "WALLET_ID",
+    "roundId": "round-1", "gameId": "slots-1",
+    "kind": "ROLLBACK", "money": { "amount": "30.00", "currency": "BRL" },
+    "referenceExternalTransactionId": "ext-bet-001"
+  }'
+```
+
+`201 Created` com `"status": "PROCESSED"` e saldo de volta a `"100.00"`.
+
+- Segundo estorno da mesma aposta (outra key/externalId): `422 REFERENCE_ALREADY_REVERSED`.
+- Referência que ainda não chegou (ex.: `"ext-bet-999"`): `202 Accepted`, `"status": "PENDING_REFERENCE"`, `"balance": null`.
+- Sem `referenceExternalTransactionId`: `400 REFERENCE_REQUIRED`.
+- `"kind": "OPENING"`: `400 OPENING_NOT_ALLOWED`.
+
+### 5. Saldo, ledger e reconciliação
+
+```sh
+curl http://localhost:3000/wallets/WALLET_ID
+curl "http://localhost:3000/wallets/WALLET_ID/ledger?limit=10"
+curl -X POST http://localhost:3000/wallets/WALLET_ID/reconciliation
+```
+
+Reconciliação, `200 OK`:
+
+```json
+{ "walletId": "WALLET_ID",
+  "storedBalance":     { "amount": "100.00", "currency": "BRL" },
+  "calculatedBalance": { "amount": "100.00", "currency": "BRL" },
+  "difference":        { "amount": "0.00",   "currency": "BRL" },
+  "consistent": true, "checkedEntries": 3 }
+```
+
+O ledger traz 3 lançamentos (abertura +100, débito de 30, crédito de 30), cada um com
+`balanceBefore` e `balanceAfter`. Também dá para consultar uma transação por id
+(`GET /wagering/transactions/<id>`) ou pelo id externo
+(`GET /providers/prov-A/wagering/transactions/ext-bet-001`).
