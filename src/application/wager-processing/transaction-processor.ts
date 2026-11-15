@@ -91,7 +91,7 @@ async function applyMovement(
   await repositories.ledger.insert(entry);
   await repositories.wallets.saveBalance(wallet, now);
   await events.processed(transaction, wallet.balance);
-  await events.balanceChanged(entry);
+  await events.balanceChanged(wallet, entry);
   return processed(transaction, wallet.balance);
 }
 

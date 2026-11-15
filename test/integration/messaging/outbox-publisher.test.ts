@@ -80,7 +80,7 @@ describe("outbox publisher against Postgres and LocalStack", () => {
       "WagerTransactionProcessed",
       "WalletBalanceChanged",
     ]);
-    expect(received[0]).toMatchObject({ correlationId: "corr-publish", eventVersion: 1 });
+    expect(received[0]).toMatchObject({ correlationId: "corr-publish", version: 1 });
     const pending = await db.orm.em.fork().count(OutboxMessageSchema, { publishedAt: null });
     expect(pending).toBe(0);
     expect(await publisher.execute()).toEqual({ published: 0, failed: 0 });

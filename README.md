@@ -171,7 +171,7 @@ O outbox publica em `wager-events` com entrega **at-least-once**; consumidores d
 {
   "eventId": "uuid-v7",
   "eventType": "WalletBalanceChanged",
-  "eventVersion": 1,
+  "version": 1,
   "aggregateId": "<walletId>",
   "correlationId": "demo-1",
   "causationId": null,
@@ -179,8 +179,11 @@ O outbox publica em `wager-events` com entrega **at-least-once**; consumidores d
   "data": {
     "walletId": "uuid",
     "transactionId": "uuid",
+    "direction": "DEBIT",
+    "money": { "amount": "25.00", "currency": "BRL" },
     "balanceBefore": { "amount": "100.00", "currency": "BRL" },
-    "balanceAfter": { "amount": "75.00", "currency": "BRL" }
+    "balanceAfter": { "amount": "75.00", "currency": "BRL" },
+    "walletVersion": 2
   }
 }
 ```

@@ -7,6 +7,8 @@ import { WalletBalanceChanged } from "../../../../src/domain/events/wallet-balan
 import { Money } from "../../../../src/domain/money/money";
 import { OutboxMessage } from "../../../../src/domain/outbox/outbox-message";
 import { TransactionKind } from "../../../../src/domain/transaction/transaction-kind";
+import { Wallet } from "../../../../src/domain/wallet/wallet";
+import { LedgerDirection } from "../../../../src/domain/wallet/wallet-ledger-entry";
 
 const base = {
   eventId: "evt-1",
@@ -15,6 +17,12 @@ const base = {
   causationId: "msg-1",
 };
 const brl = (amount: string): Money => Money.from({ amount, currency: "BRL" });
+
+function debitedWallet(initial: string, amount: string) {
+  const wallet = Wallet.open({ id: "w-1", playerId: "p-1", initialBalance: brl(initial) });
+  const entry = wallet.debit(brl(amount), "tx-1", base.occurredAt);
+  return { wallet, entry };
+}
 
 describe("integration events", () => {
   test("WagerTransactionProcessed serializes the envelope", () => {
@@ -42,14 +50,43 @@ describe("integration events", () => {
   });
 
   test("WalletBalanceChanged serializes the envelope", () => {
-    const event = WalletBalanceChanged.create({
-      ...base,
-      walletId: "w-1",
-      transactionId: "tx-1",
-      balanceBefore: brl("100.00"),
-      balanceAfter: brl("90.00"),
-    });
+    const { wallet, entry } = debitedWallet("100.00", "10.00");
+    const event = WalletBalanceChanged.from(wallet, entry, base);
     expect(event.toJSON()).toMatchSnapshot();
+  });
+
+  test("WalletBalanceChanged carries direction, money and the wallet version after the move", () => {
+    const { wallet, entry } = debitedWallet("100.00", "10.00");
+
+    const event = WalletBalanceChanged.from(wallet, entry, base);
+
+    expect(event.toJSON()).toMatchObject({
+      eventType: "WalletBalanceChanged",
+      version: 1,
+      aggregateId: "w-1",
+      data: {
+        walletId: "w-1",
+        transactionId: "tx-1",
+        direction: LedgerDirection.DEBIT,
+        money: { amount: "10.00", currency: "BRL" },
+        balanceBefore: { amount: "100.00", currency: "BRL" },
+        balanceAfter: { amount: "90.00", currency: "BRL" },
+        walletVersion: 2,
+      },
+    });
+  });
+
+  test("each concrete event declares its own type and version", () => {
+    const processed = WagerTransactionProcessed.create({
+      ...base,
+      transactionId: "tx-1",
+      walletId: "w-1",
+      kind: TransactionKind.BET,
+      amount: brl("1.00"),
+      resultingBalance: brl("1.00"),
+    });
+    expect(processed.eventType).toBe("WagerTransactionProcessed");
+    expect(processed.version).toBe(1);
   });
 
   test("WagerTransactionPendingReference serializes the envelope", () => {
@@ -65,13 +102,8 @@ describe("integration events", () => {
   });
 
   test("is enqueued in the outbox with the serialized envelope", () => {
-    const event = WalletBalanceChanged.create({
-      ...base,
-      walletId: "w-1",
-      transactionId: "tx-1",
-      balanceBefore: brl("1.00"),
-      balanceAfter: brl("2.00"),
-    });
+    const { wallet, entry } = debitedWallet("2.00", "1.00");
+    const event = WalletBalanceChanged.from(wallet, entry, base);
     const message = OutboxMessage.enqueue(event);
     expect(message.eventType).toBe("WalletBalanceChanged");
     expect(message.payload).toEqual({ ...event.toJSON() });
